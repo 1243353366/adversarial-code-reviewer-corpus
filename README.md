@@ -16,6 +16,7 @@ This repository contains **analysis, metadata and citations only**. It does not 
 | [`corpus/out/05-absurdity-lane.md`](corpus/out/05-absurdity-lane.md) | Hypothesis-generation lane built on absurd-humor properties: operators, output contract, gates, metrics |
 | [`corpus/out/06-external-review-response.md`](corpus/out/06-external-review-response.md) | Response to external review: citation verification, triage, seven accepted specification deltas |
 | [`corpus/out/07-remediation-log.md`](corpus/out/07-remediation-log.md) | Response to a second review: ten findings triaged, schema and validators added, spec amended |
+| [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md) | Attack on the validators: six checks added, four blind spots admitted as tests |
 | [`corpus/out/claims.json`](corpus/out/claims.json) | Claim-level manifest with locators, evidence class and permitted downstream uses |
 | [`adversarial-reviewer-corpus-audit.md`](adversarial-reviewer-corpus-audit.md) | Audit of an earlier proposed reading list; separates real sources from plausible-sounding ones |
 | [`paper-links-priority.md`](paper-links-priority.md) | The five verified sources with canonical records |
@@ -36,13 +37,15 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 
 ```
-python tools/validate_corpus.py   # schema, provenance, evidence gate, licensing guard
-pytest -q                         # 24 tests, including negative tests that the schema rejects bad input
+python tools/validate_corpus.py   # 13 checks: schema, provenance, evidence gates, licensing, counts, docs
+pytest -q                         # 45 tests: 21 negative, 16 adversarial attacks, 4 admitted blind spots
 ```
+
+Thirteen checks, not four. The later ones were added by attacking the validators themselves: six of them exist because a mutation got through the first version. The four mutations that still get through are written as passing tests, so the limits are visible in code rather than discovered in an incident. See [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md).
 
 Both pass locally and on the runner (Python 3.11, `ubuntu-latest`).
 
-The gate that matters most: a claim may only be used as a `security_rule` if it is both verified against the source and carries a verified locator, and never if it is an interpretation or a derived inference. Ten claims are currently in the manifest; three are verified, seven are provisional and say so.
+The gate that matters most: a claim may only be used as a `security_rule` if it is both verified against the source and carries a verified locator, and never if it is an interpretation or a derived inference. Ten claims are currently in the manifest; three are verified against retrieved text, seven have no locator that can be produced from material in the tree and are marked unavailable rather than guessed.
 
 ## Evidence classification
 

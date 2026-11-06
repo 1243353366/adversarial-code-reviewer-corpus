@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "generated": "2026-11-06",
-  "locator_policy": "Section, table and figure references point into the cited arXiv version. Claims whose locator was established in the acquisition pass but not re-verified in the remediation pass are marked provisional; claims re-verified against the retrieved full text are marked verified. No copyrighted body text is reproduced here, only identifiers and short claim statements.",
+  "locator_policy": "Section, table and figure references point into the cited arXiv version. locator_status is one of: verified (re-checked against retrieved text), provisional (known section, not re-checked), unavailable (no locator can be produced from material currently in the tree). No copyrighted body text is reproduced here, only identifiers and short claim statements.",
   "claims": [
     {
       "claim_id": "D3-C01",
@@ -11,9 +11,16 @@
       "evidence_type": "source_asserted_result",
       "verification_status": "verified_against_source",
       "replication_status": "none",
-      "locator": { "section": "V Analysis of Results", "table": "Table XIII" },
+      "locator": {
+        "section": "V Analysis of Results",
+        "table": "Table XIII"
+      },
       "locator_status": "verified",
-      "permitted_downstream_uses": ["citation_only", "design_input", "hypothesis_seed"],
+      "permitted_downstream_uses": [
+        "citation_only",
+        "design_input",
+        "hypothesis_seed"
+      ],
       "notes": "Verified in the remediation pass against the retrieved arXiv HTML. Previously the tool-to-score mapping was inferred from abstract ordering and recorded as such; the paper states the mapping explicitly, so the inference has been replaced by a quotable sentence."
     },
     {
@@ -24,9 +31,16 @@
       "evidence_type": "source_asserted_result",
       "verification_status": "verified_against_source",
       "replication_status": "none",
-      "locator": { "section": "V Analysis of Results", "table": "Table XIII" },
+      "locator": {
+        "section": "V Analysis of Results",
+        "table": "Table XIII"
+      },
       "locator_status": "verified",
-      "permitted_downstream_uses": ["citation_only", "design_input", "hypothesis_seed"],
+      "permitted_downstream_uses": [
+        "citation_only",
+        "design_input",
+        "hypothesis_seed"
+      ],
       "notes": "Same sentence pair as D3-C01."
     },
     {
@@ -37,9 +51,14 @@
       "evidence_type": "source_asserted_claim",
       "verification_status": "verified_against_source",
       "replication_status": "none",
-      "locator": { "section": "Abstract" },
+      "locator": {
+        "section": "Abstract"
+      },
       "locator_status": "verified",
-      "permitted_downstream_uses": ["citation_only", "design_input"],
+      "permitted_downstream_uses": [
+        "citation_only",
+        "design_input"
+      ],
       "notes": "Present in the retrieved abstract text."
     },
     {
@@ -50,9 +69,14 @@
       "evidence_type": "source_asserted_result",
       "verification_status": "unverified",
       "replication_status": "none",
-      "locator": { "section": "unresolved" },
-      "locator_status": "provisional",
-      "permitted_downstream_uses": ["citation_only", "hypothesis_seed"],
+      "locator": {
+        "section": "unresolved"
+      },
+      "locator_status": "unavailable",
+      "permitted_downstream_uses": [
+        "citation_only",
+        "hypothesis_seed"
+      ],
       "notes": "Recorded during acquisition; locator not re-verified in this pass. This claim drives the content-anchored finding design (S1), so it must be locator-verified before S1 is treated as evidence-backed."
     },
     {
@@ -63,9 +87,15 @@
       "evidence_type": "source_asserted_result",
       "verification_status": "unverified",
       "replication_status": "none",
-      "locator": { "section": "unresolved" },
-      "locator_status": "provisional",
-      "permitted_downstream_uses": ["citation_only", "design_input", "hypothesis_seed"],
+      "locator": {
+        "section": "unresolved"
+      },
+      "locator_status": "unavailable",
+      "permitted_downstream_uses": [
+        "citation_only",
+        "design_input",
+        "hypothesis_seed"
+      ],
       "notes": "The load-bearing claim of the whole project. Locator must be re-established before the label-provenance architecture is described as evidence-driven."
     },
     {
@@ -76,9 +106,13 @@
       "evidence_type": "source_asserted_claim",
       "verification_status": "unverified",
       "replication_status": "none",
-      "locator": { "section": "unresolved" },
-      "locator_status": "provisional",
-      "permitted_downstream_uses": ["citation_only"],
+      "locator": {
+        "section": "unresolved"
+      },
+      "locator_status": "unavailable",
+      "permitted_downstream_uses": [
+        "citation_only"
+      ],
       "notes": "In tension with D2 and D3 reported F1 scores; recorded as a contradiction in 03."
     },
     {
@@ -89,9 +123,13 @@
       "evidence_type": "source_asserted_result",
       "verification_status": "unverified",
       "replication_status": "none",
-      "locator": { "section": "unresolved" },
-      "locator_status": "provisional",
-      "permitted_downstream_uses": ["citation_only"],
+      "locator": {
+        "section": "unresolved"
+      },
+      "locator_status": "unavailable",
+      "permitted_downstream_uses": [
+        "citation_only"
+      ],
       "notes": "Count taken during acquisition; locator not re-established."
     },
     {
@@ -102,9 +140,14 @@
       "evidence_type": "source_asserted_claim",
       "verification_status": "unverified",
       "replication_status": "none",
-      "locator": { "section": "unresolved" },
-      "locator_status": "provisional",
-      "permitted_downstream_uses": ["citation_only", "design_input"],
+      "locator": {
+        "section": "unresolved"
+      },
+      "locator_status": "unavailable",
+      "permitted_downstream_uses": [
+        "citation_only",
+        "design_input"
+      ],
       "notes": "This claim is what forces the novelty framing to narrow, so it carries unusual weight for an unverified claim."
     },
     {
@@ -115,9 +158,13 @@
       "evidence_type": "source_asserted_result",
       "verification_status": "unverified",
       "replication_status": "none",
-      "locator": { "section": "unresolved" },
-      "locator_status": "provisional",
-      "permitted_downstream_uses": ["citation_only"],
+      "locator": {
+        "section": "unresolved"
+      },
+      "locator_status": "unavailable",
+      "permitted_downstream_uses": [
+        "citation_only"
+      ],
       "notes": "Survey-secondhand figure. Even when verified, this is a report of others' results, not a replicated finding."
     },
     {
@@ -128,9 +175,14 @@
       "evidence_type": "author_interpretation",
       "verification_status": "unverified",
       "replication_status": "none",
-      "locator": { "section": "unresolved" },
-      "locator_status": "provisional",
-      "permitted_downstream_uses": ["citation_only", "hypothesis_seed"],
+      "locator": {
+        "section": "unresolved"
+      },
+      "locator_status": "unavailable",
+      "permitted_downstream_uses": [
+        "citation_only",
+        "hypothesis_seed"
+      ],
       "notes": "Recorded as author interpretation, not as a measured result."
     }
   ]

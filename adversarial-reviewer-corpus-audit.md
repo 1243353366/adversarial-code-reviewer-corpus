@@ -12,6 +12,8 @@ The project's hard problem is *correlated model errors and fabricated vulnerabil
 
 ## 1. Verified sources
 
+> **Scope of the `Verified` column:** it means the identifier resolves to a real document with a matching title. It does not mean the paper's results were checked, replicated, or that its claims are true. Those are separate fields in `corpus/out/research-metadata.json`, and every source in this corpus still carries `independently_replicated: false`.
+
 Confirmed to exist, with a locatable record. Fields marked `?` were not independently confirmed in this pass and should not be asserted downstream.
 
 | Source | Status | Locator | Notes |

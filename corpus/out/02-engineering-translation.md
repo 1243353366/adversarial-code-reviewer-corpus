@@ -178,7 +178,7 @@ Two rules keep the loosening honest. First, each contract must be as hard to fab
 **Capability improved.** Cost and risk profile of the whole system.
 **Component.** Reviewer Core.
 
-**Spec.** Emit a three-way disposition per finding: auto-clear, human review, quarantine. Quarantine blocks the automated path and never resolves without a human.
+**Spec (superseded below).** Emit a three-way disposition per finding: auto-clear, human review, quarantine. Quarantine blocks the automated path and never resolves without a human. **This line is retained only as the record of what was originally specified; the amendment at the end of this section withdraws `auto-clear`, and no part of this repository should implement the three-way form.**
 
 **Acceptance criteria.** 100% of quarantined items have attribution to the triggering reviewer and the uncertainty signal; measured abstention rate reported.
 **Tests.** Feed a set of known-ambiguous findings and confirm routing stability across repeated runs.

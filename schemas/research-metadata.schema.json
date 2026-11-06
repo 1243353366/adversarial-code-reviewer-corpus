@@ -226,6 +226,134 @@
             "verified",
             "contradicted"
           ]
+        },
+        "artifacts": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {},
+          "description": "Domain field carried through from extraction."
+        },
+        "coverage_window": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Domain field carried through from extraction."
+        },
+        "datasets": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Domain field carried through from extraction."
+        },
+        "datasets_analyzed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Domain field carried through from extraction."
+        },
+        "enumerated_limitations": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {},
+          "description": "Domain field carried through from extraction."
+        },
+        "key_contributions_extracted": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {},
+          "description": "Domain field carried through from extraction."
+        },
+        "methodology": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {},
+          "description": "Domain field carried through from extraction."
+        },
+        "negative_results": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {},
+          "description": "Domain field carried through from extraction."
+        },
+        "peer_review_status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Domain field carried through from extraction."
+        },
+        "research_domain": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {},
+          "description": "Domain field carried through from extraction."
+        },
+        "results": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Domain field carried through from extraction."
+        },
+        "retained_for": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Domain field carried through from extraction."
+        },
+        "retraction_or_correction_status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Domain field carried through from extraction."
+        },
+        "security_implications_noted_by_authors": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Domain field carried through from extraction."
+        },
+        "statistical_limitations": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {},
+          "description": "Domain field carried through from extraction."
+        },
+        "superseded_by": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {},
+          "description": "Domain field carried through from extraction."
+        },
+        "technical_architecture": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {},
+          "description": "Domain field carried through from extraction."
         }
       }
     },

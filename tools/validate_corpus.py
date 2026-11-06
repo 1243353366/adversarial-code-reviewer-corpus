@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -140,10 +141,177 @@ def check_claim_gate(claims_doc: dict, known_doc_ids: set[str]) -> list[str]:
     return errors
 
 
+# --- checks added after an adversarial pass on the validators themselves ------
+
+ASSERTIVE_STATUS = (
+    "accepted at",
+    "accepted tosEm".lower(),
+    "accepted for publication",
+    "published in acm",
+    "peer-reviewed publication",
+    "peer reviewed and published",
+)
+STATUS_QUALIFIERS = (
+    "per manuscript",
+    "asserted",
+    "unconfirmed",
+    "not confirmed",
+    "secondary",
+    "tier",
+    "claims",
+    "as stated",
+)
+PERMISSIVE_LICENSE = re.compile(r"(CC BY|CC0|MIT|Apache|BSD)", re.I)
+
+
+def check_status_language(paths: list[str]) -> list[str]:
+    """A markdown claim of publication must carry its qualifier on the same line.
+
+    The defect this prevents was observed: a README said "Accepted TOSEM" while the
+    provenance report recorded that no publisher record had been opened.
+    """
+    errors = []
+    for raw in paths:
+        path = Path(raw)
+        if path.suffix.lower() != ".md" or not path.exists():
+            continue
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            low = line.lower()
+            hit = next((p for p in ASSERTIVE_STATUS if p in low), None)
+            if not hit:
+                continue
+            pos = low.index(hit)
+            window = low[max(0, pos - 30):pos]
+            # A negation is the opposite of the thing this check exists to catch.
+            if re.search(r"\b(not|never|no|neither|isn't|wasn't)\b", window):
+                continue
+            if not any(q in low for q in STATUS_QUALIFIERS):
+                errors.append(
+                    f"{path}:{lineno}: unqualified publication claim {hit!r} "
+                    f"(add the basis on the same line)"
+                )
+    return errors
+
+
+def check_corpus_counts(meta: dict) -> list[str]:
+    """Corpus-level totals must reconcile with the document list, not be typed by hand."""
+    errors = []
+    obs = meta.get("corpus_level_observations", {})
+    docs = meta.get("documents", [])
+    ids = [d.get("doc_id") for d in docs]
+    all_ids = set(ids)
+
+    verified = obs.get("documents_verified")
+    unverifiable = obs.get("documents_unverifiable")
+    if isinstance(verified, int) and isinstance(unverifiable, int):
+        if verified + unverifiable != len(docs):
+            errors.append(
+                f"corpus counts do not reconcile: verified {verified} + unverifiable "
+                f"{unverifiable} != {len(docs)} documents"
+            )
+
+    preprints = set(obs.get("preprints", []))
+    if not preprints <= all_ids:
+        errors.append(f"preprints references unknown documents: {sorted(preprints - all_ids)}")
+
+    redistributable = set(obs.get("redistributable", []))
+    non_redistributable = set(obs.get("non_redistributable", []))
+    if redistributable & non_redistributable:
+        errors.append(
+            f"documents listed both redistributable and not: "
+            f"{sorted(redistributable & non_redistributable)}"
+        )
+    if redistributable | non_redistributable != all_ids:
+        missing = all_ids - (redistributable | non_redistributable)
+        extra = (redistributable | non_redistributable) - all_ids
+        if missing:
+            errors.append(f"documents missing from the redistribution partition: {sorted(missing)}")
+        if extra:
+            errors.append(f"redistribution partition lists unknown documents: {sorted(extra)}")
+    return errors
+
+
+def check_license_consistency(meta: dict) -> list[str]:
+    """The redistribution partition must agree with each document's license field."""
+    errors = []
+    obs = meta.get("corpus_level_observations", {})
+    redistributable = set(obs.get("redistributable", []))
+    for doc in meta.get("documents", []):
+        did = doc.get("doc_id")
+        permissive = bool(PERMISSIVE_LICENSE.search(doc.get("license", "")))
+        if did in redistributable and not permissive:
+            errors.append(
+                f"{did}: listed redistributable but license {doc.get('license')!r} is not permissive"
+            )
+        if did not in redistributable and permissive:
+            errors.append(
+                f"{did}: permissive license {doc.get('license')!r} but listed as non-redistributable"
+            )
+    return errors
+
+
+def check_replication_claims(claims_doc: dict, meta: dict) -> list[str]:
+    """A claim cannot assert replication the document does not record."""
+    errors = []
+    replicated = {
+        d.get("doc_id")
+        for d in meta.get("documents", [])
+        if d.get("reproducibility", {}).get("independently_replicated") is True
+    }
+    for claim in claims_doc.get("claims", []):
+        if claim.get("replication_status") != "none" and claim.get("document_id") not in replicated:
+            errors.append(
+                f"{claim.get('claim_id')}: replication_status "
+                f"{claim.get('replication_status')!r} but {claim.get('document_id')} records no "
+                f"independent replication"
+            )
+    return errors
+
+
+def check_locator_resolution(claims_doc: dict) -> list[str]:
+    """A locator claiming to exist must name a real section."""
+    errors = []
+    for claim in claims_doc.get("claims", []):
+        status = claim.get("locator_status")
+        section = claim.get("locator", {}).get("section", "")
+        if status == "unavailable":
+            continue
+        if section.strip().lower() in {"", "unresolved", "unknown", "tbd", "n/a"}:
+            errors.append(
+                f"{claim.get('claim_id')}: locator_status {status!r} but section is {section!r}"
+            )
+    return errors
+
+
+def check_extension_keys(meta: dict) -> list[str]:
+    """Unknown document fields must be namespaced, so an adversary cannot smuggle `verified: true`."""
+    errors = []
+    schema = load(ROOT / "schemas" / "research-metadata.schema.json")
+    allowed = set(schema["$defs"]["document"].get("properties", {}))
+    for doc in meta.get("documents", []):
+        for key in doc:
+            if key not in allowed and not key.startswith("x_"):
+                errors.append(
+                    f"{doc.get('doc_id')}: undocumented field {key!r} (prefix with x_ to extend)"
+                )
+    return errors
+
+
+def _tracked_files(root: Path) -> list[str]:
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(root), "ls-files"], capture_output=True, text=True, check=True
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return []
+    return [str(root / line) for line in out.splitlines() if line.strip()]
+
+
 def validate_all(root: Path = ROOT) -> dict[str, list[str]]:
     report: dict[str, list[str]] = {}
     meta = load(root / "corpus" / "out" / "research-metadata.json")
     claims_doc = load(root / "corpus" / "out" / "claims.json")
+    tracked = _tracked_files(root)
 
     report["metadata_schema"] = schema_errors(meta, load(root / "schemas" / "research-metadata.schema.json"))
     report["claim_schema"] = schema_errors(claims_doc, load(root / "schemas" / "claim.schema.json"))
@@ -153,23 +321,13 @@ def validate_all(root: Path = ROOT) -> dict[str, list[str]]:
     report["claim_gate"] = check_claim_gate(
         claims_doc, {d.get("doc_id") for d in meta.get("documents", [])}
     )
-
-    tracked = []
-    git_index = root / ".git" / "index"
-    if git_index.exists():
-        import subprocess
-
-        try:
-            out = subprocess.run(
-                ["git", "-C", str(root), "ls-files"],
-                capture_output=True,
-                text=True,
-                check=True,
-            ).stdout
-            tracked = [str(root / line) for line in out.splitlines() if line.strip()]
-        except (OSError, subprocess.CalledProcessError):
-            tracked = []
     report["licensing_guard"] = check_no_document_bodies(tracked)
+    report["corpus_counts"] = check_corpus_counts(meta)
+    report["license_consistency"] = check_license_consistency(meta)
+    report["replication_claims"] = check_replication_claims(claims_doc, meta)
+    report["locator_resolution"] = check_locator_resolution(claims_doc)
+    report["extension_keys"] = check_extension_keys(meta)
+    report["status_language"] = check_status_language(tracked)
     return report
 
 
