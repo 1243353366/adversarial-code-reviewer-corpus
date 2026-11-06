@@ -306,6 +306,57 @@ def check_extension_keys(meta: dict) -> list[str]:
     return errors
 
 
+STATUS_FIELDS = ("peer_review_status", "doi_status", "retraction_or_correction_status")
+NEGATION = re.compile(r"\b(not|never|no|neither|isn't|wasn't)\b")
+EXPECTED_TIER = {
+    "manuscript_asserted": ("manuscript", "asserted", "header"),
+    "secondary_source": ("secondary", "citations", "not opened", "per "),
+}
+
+
+def _unqualified_claim(text: str) -> str | None:
+    """Return the assertive phrase in `text` if nothing on the string qualifies it."""
+    low = text.lower()
+    hit = next((p for p in ASSERTIVE_STATUS if p in low), None)
+    if not hit:
+        return None
+    window = low[max(0, low.index(hit) - 30):low.index(hit)]
+    if NEGATION.search(window):
+        return None
+    if any(q in low for q in STATUS_QUALIFIERS):
+        return None
+    return hit
+
+
+def check_status_fields(meta: dict) -> list[str]:
+    """The JSON status fields are free text, and were exempt from the check that scans markdown.
+
+    Two of them asserted peer review with no stated basis while their own tier said the
+    basis was a manuscript header or a third party. The markdown lint could not see them.
+    """
+    errors = []
+    for doc in meta.get("documents", []):
+        did = doc.get("doc_id")
+        tier = doc.get("peer_review_tier")
+        for field in STATUS_FIELDS:
+            text = doc.get(field)
+            if not isinstance(text, str):
+                continue
+            hit = _unqualified_claim(text)
+            if hit:
+                errors.append(
+                    f"{did}.{field}: unqualified claim {hit!r} in {text[:60]!r}"
+                )
+        text = (doc.get("peer_review_status") or "").lower()
+        if tier in EXPECTED_TIER and text:
+            if not any(tok in text for tok in EXPECTED_TIER[tier]):
+                errors.append(
+                    f"{did}.peer_review_status: tier {tier!r} but no basis stated in "
+                    f"{text[:60]!r}"
+                )
+    return errors
+
+
 def _tracked_files(root: Path) -> list[str]:
     try:
         out = subprocess.run(
@@ -336,6 +387,7 @@ def validate_all(root: Path = ROOT) -> dict[str, list[str]]:
     report["replication_claims"] = check_replication_claims(claims_doc, meta)
     report["locator_resolution"] = check_locator_resolution(claims_doc)
     report["extension_keys"] = check_extension_keys(meta)
+    report["status_fields"] = check_status_fields(meta)
     report["status_language"] = check_status_language(tracked)
     return report
 

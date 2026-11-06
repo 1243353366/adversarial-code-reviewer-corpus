@@ -18,6 +18,7 @@ This repository contains **analysis, metadata and citations only**. It does not 
 | [`corpus/out/07-remediation-log.md`](corpus/out/07-remediation-log.md) | Response to a second review: ten findings triaged, schema and validators added, spec amended |
 | [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md) | Attack on the validators: six checks added, four blind spots admitted as tests |
 | [`corpus/out/09-oracle-and-pilot-defects.md`](corpus/out/09-oracle-and-pilot-defects.md) | What counts as an oracle, and the pilot the plan was missing |
+| [`corpus/out/10-harness-metric-defects.md`](corpus/out/10-harness-metric-defects.md) | Three metric defects: a pilot too small to stratify, unrequired verdicts, a circular fabrication rate |
 | [`corpus/out/claims.json`](corpus/out/claims.json) | Claim-level manifest with locators, evidence class and permitted downstream uses |
 | [`adversarial-reviewer-corpus-audit.md`](adversarial-reviewer-corpus-audit.md) | Audit of an earlier proposed reading list; separates real sources from plausible-sounding ones |
 | [`paper-links-priority.md`](paper-links-priority.md) | The five verified sources with canonical records |
@@ -38,11 +39,11 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 
 ```
-python tools/validate_corpus.py   # 13 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 47 tests: negative cases, adversarial attacks, admitted blind spots
+python tools/validate_corpus.py   # 14 checks: schema, provenance, evidence gates, licensing, counts, docs
+pytest -q                         # 50 tests: negative cases, adversarial attacks, admitted blind spots
 ```
 
-Thirteen checks, not four. The later ones were added by attacking the validators themselves: six of them exist because a mutation got through the first version. The four mutations that still get through are written as passing tests, so the limits are visible in code rather than discovered in an incident. See [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md).
+Fourteen checks, not four. The later ones were added by attacking the validators themselves: six of them exist because a mutation got through the first version. The four mutations that still get through are written as passing tests, so the limits are visible in code rather than discovered in an incident. See [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md).
 
 Both pass locally and on the runner (Python 3.11, `ubuntu-latest`).
 
@@ -52,7 +53,7 @@ The gate that matters most: a claim may only be used as a `security_rule` if it 
 
 The rule is stated in the standing instructions and repeated throughout: nothing lands without independent review, and no change reaches a protected branch on trust. It has been broken once, and the record belongs here rather than in a commit message nobody reads.
 
-**2026-11-06: direct push to `main`.** Two commits landed on `main` without a pull request. They were the validator hardening commit `c8300b55` and the fix that followed it. The content was tested, 47 tests passing and 13 checks green, and that is exactly why this is worth recording: the work was fine and the process was not. A change that proves itself after the fact has still skipped the step that exists to catch the change that does not.
+**2026-11-06: direct push to `main`.** Two commits landed on `main` without a pull request. They were the validator hardening commit `c8300b55` and the fix that followed it. The content was tested, every check green and the suite passing, and that is exactly why this is worth recording: the work was fine and the process was not. A change that proves itself after the fact has still skipped the step that exists to catch the change that does not.
 
 The commit was made by an AI agent working on the maintainer's behalf, against a checked-out `main`. The maintainer is accountable for it, because authorising an agent to work in a repository is authorising its mistakes along with its work. The agent disclosed it in the same message that reported the result, which is the only part of this that went right.
 
@@ -71,7 +72,7 @@ remote: - Required status check "corpus" is expected.
 
 A rule the repository owner can bypass is not a rule, it is a preference. `enforce_admins` is now on, and a direct push is rejected with `protected branch hook declined`. That test push left a throwaway commit on `main`, which is reverted rather than force-deleted, because force-push is now blocked for exactly the reason it should be.
 
-This is the same failure mode as the licence paragraph and the fabricated citations, at the level of process instead of prose: something that looked like enforcement while being advisory. The pattern has now occurred five times in this project. It is the actual subject of the repository.
+This is the same failure mode as the license paragraph and the fabricated citations, at the level of process instead of prose: something that looked like enforcement while being advisory. The pattern has now occurred five times in this project. It is the actual subject of the repository.
 
 The rule is enforced by the platform instead of by intention: a standard that lives in prose is a standard that has already been broken once.
 
@@ -85,13 +86,13 @@ The joke did not produce a theory of software quality. It produced a worked demo
 
 | # | Declared control | What actually happened |
 |---|---|---|
-| 1 | CC BY-SA requires the whole compilation to carry the licence | ShareAlike attaches to adapted material, not to a collection holding an unmodified work. The claim was wrong and is withdrawn. |
+| 1 | CC BY-SA requires the whole compilation to carry the license | ShareAlike attaches to adapted material, not to a collection holding an unmodified work. The claim was wrong and is withdrawn. |
 | 2 | Sources listed as verified | Several named papers did not exist. Verification meant the identifier resolved, and for those it did not. |
 | 3 | `schema_version: "1.1"` | Nothing validated against it for the first three revisions. A version number with no validator is a comment. |
 | 4 | The CI gate | The workflow file sat outside `.github/`, and the dev requirements were excluded by a `*.txt` ignore rule. The first armed run failed before executing a single check. |
 | 5 | Branch protection requiring the `corpus` status check | Enabled with `enforce_admins` off. The next direct push succeeded, tagged `Bypassed rule violations`. |
 
-Entries 4 and 5 share a cause worth naming: both controls were reported as working before anything had exercised them. The workflow was described as the gate while it was a file in the wrong directory; the protection was described as binding while the account making the pushes could step around it. Neither was a lie. Both were configuration mistaken for behaviour.
+Entries 4 and 5 share a cause worth naming: both controls were reported as working before anything had exercised them. The workflow was described as the gate while it was a file in the wrong directory; the protection was described as binding while the account making the pushes could step around it. Neither was a lie. Both were configuration mistaken for behavior.
 
 **The difference that mattered.** Entry 5 was found by pushing to main and reading the rejection, not by reading the settings. A configuration is a claim about what should happen. A rejected push is evidence about what does. The repository now prefers the second, which is the same rule it applies to vulnerability claims, arrived at by failing to apply it to itself.
 

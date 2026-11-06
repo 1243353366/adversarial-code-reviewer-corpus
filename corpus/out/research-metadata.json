@@ -275,7 +275,7 @@
       ],
       "license": "arXiv.org perpetual non-exclusive distribution license",
       "license_redistribution": "prohibited",
-      "peer_review_status": "peer reviewed, ESORICS 2024",
+      "peer_review_status": "peer reviewed, ESORICS 2024, per the manuscript header; publisher record not opened",
       "retraction_or_correction_status": "none observed",
       "research_domain": [
         "software_security",
@@ -366,7 +366,7 @@
       ],
       "license": "arXiv.org perpetual non-exclusive distribution license",
       "license_redistribution": "prohibited",
-      "peer_review_status": "peer reviewed, TOSEM",
+      "peer_review_status": "peer reviewed, TOSEM, per external citations; publisher record not opened",
       "retraction_or_correction_status": "none observed",
       "research_domain": [
         "software_security",

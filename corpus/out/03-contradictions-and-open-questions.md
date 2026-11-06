@@ -9,7 +9,7 @@
 - **D4** `[E]`: fine-tuning lets small models outperform larger ones, **but only within the specific scenarios they were trained on**, and models do not generalise to different testing environments.
 - **D2** `[E]`: large models above 10B parameters with parameter-efficient tuning achieve optimal results, with F1 near 0.9 reported for base models like GPT-4 and CodeLlama.
 
-**Assessment.** Surface contradiction, partially reconcilable. D2 pools results across heterogeneous studies using their own benchmarks; D4 measures cross-benchmark transfer directly. Both can be true: fine-tuning gains in-domain and degrades out-of-domain. But the two licence opposite engineering decisions (invest in a fine-tuned specialist versus invest in a general model plus architecture), so the disagreement is real for anyone building a system. `[D]`
+**Assessment.** Surface contradiction, partially reconcilable. D2 pools results across heterogeneous studies using their own benchmarks; D4 measures cross-benchmark transfer directly. Both can be true: fine-tuning gains in-domain and degrades out-of-domain. But the two license opposite engineering decisions (invest in a fine-tuned specialist versus invest in a general model plus architecture), so the disagreement is real for anyone building a system. `[D]`
 
 **Unresolved because:** D2 does not report out-of-domain transfer for its near-0.9 figures, and D4 does not test at the 10B+ scale with PEFT. Neither tests the same model on the same split.
 

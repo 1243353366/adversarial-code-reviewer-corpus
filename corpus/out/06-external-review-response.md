@@ -21,7 +21,7 @@ All four references exist and are correctly described at the bibliographic level
 
 **What the strongest one actually shows.** Dong et al. ran four studies (N = 175, 243, 225, 433) using a cartoon humor production paradigm. Humor production correlated with creativity; self-efficacy mediated; fear of authority moderated. Creativity is measured with psychological instruments, in students and workplace samples.
 
-**The transfer gap is total.** None of the four examines software, code review, security, engineering output, or adversarial analysis of any kind. Three are organizational-behaviour studies about leadership and workplace creativity. The meta-analysis is in a management journal. The distance from "producing cartoons correlates with divergent-thinking scores" to "an irreverent reviewer finds vulnerabilities that a sober reviewer misses" is the entire research question, not a premise for it.
+**The transfer gap is total.** None of the four examines software, code review, security, engineering output, or adversarial analysis of any kind. Three are organizational-behavior studies about leadership and workplace creativity. The meta-analysis is in a management journal. The distance from "producing cartoons correlates with divergent-thinking scores" to "an irreverent reviewer finds vulnerabilities that a sober reviewer misses" is the entire research question, not a premise for it.
 
 So the review's own hedge is the correct reading: these support investigating the idea, and establish nothing about performance. `[E for the bibliographic facts] [D for the transfer, which remains untested]`
 
