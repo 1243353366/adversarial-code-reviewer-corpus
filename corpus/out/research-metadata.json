@@ -13,7 +13,13 @@
     {
       "doc_id": "D1",
       "title": "A Systematic Literature Review on Detecting Software Vulnerabilities with Large Language Models",
-      "authors": ["Sabrina Kaniewski", "Fabian Schmidt", "Markus Enzweiler", "Michael Menth", "Tobias Heer"],
+      "authors": [
+        "Sabrina Kaniewski",
+        "Fabian Schmidt",
+        "Markus Enzweiler",
+        "Michael Menth",
+        "Tobias Heer"
+      ],
       "publication_year": 2025,
       "document_type": "systematic_literature_review",
       "venue": "ACM Transactions on Software Engineering and Methodology (TOSEM), stated in manuscript; in press",
@@ -22,31 +28,67 @@
       "arxiv_id": "2507.22659",
       "source_url": "https://arxiv.org/abs/2507.22659",
       "versions": [
-        {"version": "v1", "date": "2025-07-30", "note": "originally announced"},
-        {"version": "v2", "date": "2025-12-19", "note": "current; study window extended to November 2025; 263 primary studies"}
+        {
+          "version": "v1",
+          "date": "2025-07-30",
+          "note": "originally announced"
+        },
+        {
+          "version": "v2",
+          "date": "2025-12-19",
+          "note": "current; study window extended to November 2025; 263 primary studies"
+        }
       ],
       "license": "arXiv.org perpetual non-exclusive distribution license",
       "license_redistribution": "prohibited; arXiv-only distribution right, not a general reuse grant",
       "peer_review_status": "accepted at TOSEM per manuscript header; acceptance not independently confirmed",
       "retraction_or_correction_status": "none observed",
-      "research_domain": ["software_security", "LLM_code_analysis"],
-      "methodology": ["systematic_literature_review", "SLR_per_KITCHENHAM_style_protocol_referenced", "263_primary_studies", "taxonomy_derivation"],
+      "research_domain": [
+        "software_security",
+        "LLM_code_analysis"
+      ],
+      "methodology": [
+        "systematic_literature_review",
+        "SLR_per_KITCHENHAM_style_protocol_referenced",
+        "263_primary_studies",
+        "taxonomy_derivation"
+      ],
       "datasets_analyzed": "survey of datasets used by primary studies; identifies Devign and Big-Vul as prevalent benchmarks implicated in pretraining contamination",
-      "artifacts": ["https://github.com/hs-esslingen-it-security/Awesome-LLM4SVD"],
+      "artifacts": [
+        "https://github.com/hs-esslingen-it-security/Awesome-LLM4SVD"
+      ],
       "key_contributions_extracted": [
         "Taxonomy across task formulation, input representation, system architecture, adaptation technique",
         "Seven structured limitations L1-L7",
         "Seven matching actionable research directions",
         "Dataset-centric analysis: granularity, labelling, class imbalance, long-tail CWE distribution, data leakage"
       ],
-      "reproducibility": {"protocol_reported": true, "search_strings_reported": true, "living_artifact_repo": true, "independently_replicated": false},
-      "confidence": {"source_authenticity": "high", "method_rigor": "high_for_a_survey", "transfer_to_production": "not_applicable_review"},
-      "evidence_status": "not_independently_verified"
+      "reproducibility": {
+        "protocol_reported": true,
+        "search_strings_reported": true,
+        "living_artifact_repo": true,
+        "independently_replicated": false
+      },
+      "confidence": {
+        "source_authenticity": "high",
+        "method_rigor": "high_for_a_survey",
+        "transfer_to_production": "not_applicable_review"
+      },
+      "evidence_status": "not_independently_verified",
+      "peer_review_tier": "manuscript_asserted",
+      "peer_review_tier_basis": "TOSEM acceptance stated in the manuscript header; placeholder DOI in body. No publisher record opened."
     },
     {
       "doc_id": "D2",
       "title": "LLMs in Software Security: A Survey of Vulnerability Detection Techniques and Insights",
-      "authors": ["Ze Sheng", "Zhicheng Chen", "Shuning Gu", "Heqing Huang", "Guofei Gu", "Jeff Huang"],
+      "authors": [
+        "Ze Sheng",
+        "Zhicheng Chen",
+        "Shuning Gu",
+        "Heqing Huang",
+        "Guofei Gu",
+        "Jeff Huang"
+      ],
       "publication_year": 2025,
       "document_type": "survey",
       "venue": "ACM Computing Surveys 58(5), November 2025",
@@ -54,13 +96,27 @@
       "doi_status": "venue confirmed via multiple citing works; DOI not confirmed in this pass",
       "arxiv_id": "2502.07049",
       "source_url": "https://arxiv.org/abs/2502.07049",
-      "versions": [{"version": "v1", "date": "2025-02", "note": "single version observed"}],
+      "versions": [
+        {
+          "version": "v1",
+          "date": "2025-02",
+          "note": "single version observed"
+        }
+      ],
       "license": "arXiv.org perpetual non-exclusive distribution license",
       "license_redistribution": "prohibited",
       "peer_review_status": "published in CSUR per external citations; publisher record not opened",
       "retraction_or_correction_status": "none observed",
-      "research_domain": ["software_security", "LLM_code_analysis"],
-      "methodology": ["structured_survey", "four_research_questions", "pattern_and_variation_analysis_across_studies", "living_findings_list"],
+      "research_domain": [
+        "software_security",
+        "LLM_code_analysis"
+      ],
+      "methodology": [
+        "structured_survey",
+        "four_research_questions",
+        "pattern_and_variation_analysis_across_studies",
+        "living_findings_list"
+      ],
       "datasets_analyzed": "function-level and file-level datasets; notes C/C++ dominance and near-total absence of repository-level datasets",
       "key_contributions_extracted": [
         "Unified framework over problem formulation, model selection, application methodology, datasets, metrics",
@@ -68,31 +124,66 @@
         "Quantified observation: 41.3% of surveyed studies use code-processing techniques (graph, RAG, slicing) with gains that shrink on cross-file vulnerabilities",
         "Named four-field challenge list including data leakage inflating metrics and positional bias in long contexts"
       ],
-      "reproducibility": {"protocol_reported": true, "search_strings_reported": "partially", "living_artifact_repo": true, "independently_replicated": false},
-      "confidence": {"source_authenticity": "high", "method_rigor": "medium_high", "transfer_to_production": "not_applicable_review"},
-      "evidence_status": "not_independently_verified"
+      "reproducibility": {
+        "protocol_reported": true,
+        "search_strings_reported": "partially",
+        "living_artifact_repo": true,
+        "independently_replicated": false
+      },
+      "confidence": {
+        "source_authenticity": "high",
+        "method_rigor": "medium_high",
+        "transfer_to_production": "not_applicable_review"
+      },
+      "evidence_status": "not_independently_verified",
+      "peer_review_tier": "secondary_source",
+      "peer_review_tier_basis": "CSUR 58(5) reported by multiple citing works. Publisher record not opened."
     },
     {
       "doc_id": "D3",
       "title": "Large Language Models Versus Static Code Analysis Tools: A Systematic Benchmark for Vulnerability Detection",
-      "authors": ["Damian Gnieciak", "Tomasz Szandala"],
+      "authors": [
+        "Damian Gnieciak",
+        "Tomasz Szandala"
+      ],
       "publication_year": 2025,
       "document_type": "preprint_empirical_benchmark",
       "venue": "arXiv preprint; manuscript text refers to itself as a thesis, so provenance is a degree thesis adapted to preprint",
       "doi": null,
       "arxiv_id": "2508.04448",
       "source_url": "https://arxiv.org/abs/2508.04448",
-      "versions": [{"version": "v1", "date": "2025-08-06", "note": "single version observed"}],
+      "versions": [
+        {
+          "version": "v1",
+          "date": "2025-08-06",
+          "note": "single version observed"
+        }
+      ],
       "license": "CC BY-SA 4.0",
       "license_redistribution": "permitted with attribution; share-alike propagates to derivative compilations",
       "peer_review_status": "not peer reviewed; no venue stated",
       "retraction_or_correction_status": "none observed",
-      "research_domain": ["software_security", "static_analysis", "LLM_benchmarking"],
-      "methodology": ["controlled_comparative_benchmark", "six_systems", "three_static_tools", "three_LLMs", "SARIF_output_normalization", "precision_recall_F1_latency_effort"],
+      "research_domain": [
+        "software_security",
+        "static_analysis",
+        "LLM_benchmarking"
+      ],
+      "methodology": [
+        "controlled_comparative_benchmark",
+        "six_systems",
+        "three_static_tools",
+        "three_LLMs",
+        "SARIF_output_normalization",
+        "precision_recall_F1_latency_effort"
+      ],
       "datasets": {
         "name": "curated suite of 10 real-world C# projects",
         "size": "63 vulnerabilities",
-        "categories": ["SQL injection", "hard-coded secrets", "outdated dependencies"],
+        "categories": [
+          "SQL injection",
+          "hard-coded secrets",
+          "outdated dependencies"
+        ],
         "limitations": "small N, single language, single run per configuration, no variance or confidence intervals reported, default tool configurations"
       },
       "technical_architecture": [
@@ -101,8 +192,16 @@
         "GPT-4.1, Mistral Large, DeepSeek V3 via GitHub Models platform"
       ],
       "results": {
-        "mean_f1_llm": {"gpt-4.1": 0.797, "mistral_large": 0.753, "deepseek_v3": 0.750},
-        "mean_f1_static": {"sonarqube": 0.260, "codeql": 0.386, "snyk_code": 0.546},
+        "mean_f1_llm": {
+          "gpt-4.1": 0.797,
+          "mistral_large": 0.753,
+          "deepseek_v3": 0.75
+        },
+        "mean_f1_static": {
+          "sonarqube": 0.26,
+          "codeql": 0.386,
+          "snyk_code": 0.546
+        },
         "mapping_note": "tool-to-score mapping inferred from the order in which tools are listed in the abstract; the paper's tables should be consulted before quoting an individual tool's score",
         "llm_advantage_source": "recall",
         "false_positive_observation": "DeepSeek V3 exhibits the highest false-positive ratio",
@@ -119,27 +218,60 @@
         "63 vulnerabilities is too few for stable per-CWE conclusions",
         "single programming language and ecosystem"
       ],
-      "reproducibility": {"code_available": "authors state an open benchmark and JSON-based result harness were released; URL not verified in this pass", "data_available": "stated", "independently_replicated": false},
-      "confidence": {"source_authenticity": "high", "method_rigor": "low_medium", "transfer_to_production": "low_for_magnitudes_medium_for_direction"},
-      "evidence_status": "not_independently_verified"
+      "reproducibility": {
+        "code_available": "authors state an open benchmark and JSON-based result harness were released; URL not verified in this pass",
+        "data_available": "stated",
+        "independently_replicated": false
+      },
+      "confidence": {
+        "source_authenticity": "high",
+        "method_rigor": "low_medium",
+        "transfer_to_production": "low_for_magnitudes_medium_for_direction"
+      },
+      "evidence_status": "not_independently_verified",
+      "peer_review_tier": "unreviewed",
+      "peer_review_tier_basis": "Thesis preprint; no venue and no peer review."
     },
     {
       "doc_id": "D4",
       "title": "Outside the Comfort Zone: Analysing LLM Capabilities in Software Vulnerability Detection",
-      "authors": ["Yuejun Guo", "Constantinos Patsakis", "Qiang Hu", "Qiang Tang", "Fran Casino"],
+      "authors": [
+        "Yuejun Guo",
+        "Constantinos Patsakis",
+        "Qiang Hu",
+        "Qiang Tang",
+        "Fran Casino"
+      ],
       "publication_year": 2024,
       "document_type": "peer_reviewed_conference_paper",
       "venue": "ESORICS 2024",
       "doi": "not_resolved",
       "arxiv_id": "2408.16400",
       "source_url": "https://arxiv.org/abs/2408.16400",
-      "versions": [{"version": "v1", "date": "2024-08-29", "note": "accepted to ESORICS 2024 per comments field"}],
+      "versions": [
+        {
+          "version": "v1",
+          "date": "2024-08-29",
+          "note": "accepted to ESORICS 2024 per comments field"
+        }
+      ],
       "license": "arXiv.org perpetual non-exclusive distribution license",
       "license_redistribution": "prohibited",
       "peer_review_status": "peer reviewed, ESORICS 2024",
       "retraction_or_correction_status": "none observed",
-      "research_domain": ["software_security", "LLM_benchmarking", "dataset_quality"],
-      "methodology": ["comparative_binary_classification_experiment", "six_task_specific_models", "six_general_purpose_LLMs", "three_fine_tuned", "five_public_benchmarks_plus_authored_dataset", "Semgrep_as_labeling_oracle"],
+      "research_domain": [
+        "software_security",
+        "LLM_benchmarking",
+        "dataset_quality"
+      ],
+      "methodology": [
+        "comparative_binary_classification_experiment",
+        "six_task_specific_models",
+        "six_general_purpose_LLMs",
+        "three_fine_tuned",
+        "five_public_benchmarks_plus_authored_dataset",
+        "Semgrep_as_labeling_oracle"
+      ],
       "datasets": {
         "authored": "one dataset compiled by the authors",
         "external": "five state-of-the-art benchmark datasets",
@@ -151,7 +283,11 @@
         "generalization": "models do not generalise well to different testing environments",
         "label_quality_finding_primary": "Semgrep, used as an independent oracle, identified only a very small fragment of the vulnerabilities each dataset claims to contain",
         "label_quality_finding_secondary": "Semgrep identified vulnerabilities inside code that datasets labelled secure, in several datasets",
-        "attributed_causes_of_mislabelling": ["automated annotation tooling", "treating code as fixed after a commit even where the vulnerability was not resolved", "code sample length effects"]
+        "attributed_causes_of_mislabelling": [
+          "automated annotation tooling",
+          "treating code as fixed after a commit even where the vulnerability was not resolved",
+          "code sample length effects"
+        ]
       },
       "negative_results": [
         "answer to 'can base LLMs detect vulnerabilities in source code' recorded by the authors as unclear",
@@ -163,14 +299,29 @@
         "benchmark label noise is unquantified beyond the Semgrep cross-check, and Semgrep itself has unknown recall on these samples"
       ],
       "security_implications_noted_by_authors": "training on mislabelled data functions analogously to data poisoning",
-      "reproducibility": {"code_available": "not confirmed", "data_available": "authored dataset described; access not confirmed", "independently_replicated": false},
-      "confidence": {"source_authenticity": "high", "method_rigor": "medium_high", "transfer_to_production": "medium_high_for_the_label_noise_finding"},
-      "evidence_status": "not_independently_verified"
+      "reproducibility": {
+        "code_available": "not confirmed",
+        "data_available": "authored dataset described; access not confirmed",
+        "independently_replicated": false
+      },
+      "confidence": {
+        "source_authenticity": "high",
+        "method_rigor": "medium_high",
+        "transfer_to_production": "medium_high_for_the_label_noise_finding"
+      },
+      "evidence_status": "not_independently_verified",
+      "peer_review_tier": "manuscript_asserted",
+      "peer_review_tier_basis": "ESORICS 2024 acceptance stated in the arXiv comments field. No publisher record opened."
     },
     {
       "doc_id": "D5",
       "title": "Large Language Model for Vulnerability Detection and Repair: Literature Review and the Road Ahead",
-      "authors": ["Xin Zhou", "Sicong Cao", "Xiaobing Sun", "David Lo"],
+      "authors": [
+        "Xin Zhou",
+        "Sicong Cao",
+        "Xiaobing Sun",
+        "David Lo"
+      ],
       "publication_year": 2024,
       "document_type": "literature_review",
       "venue": "ACM Transactions on Software Engineering and Methodology (TOSEM), May 2025",
@@ -178,15 +329,34 @@
       "arxiv_id": "2404.02525",
       "source_url": "https://arxiv.org/abs/2404.02525",
       "versions": [
-        {"version": "v1", "date": "2024-04-03", "note": "originally announced"},
-        {"version": "v2", "date": "2024-10-07", "note": "current on arXiv"}
+        {
+          "version": "v1",
+          "date": "2024-04-03",
+          "note": "originally announced"
+        },
+        {
+          "version": "v2",
+          "date": "2024-10-07",
+          "note": "current on arXiv"
+        }
       ],
       "license": "arXiv.org perpetual non-exclusive distribution license",
       "license_redistribution": "prohibited",
       "peer_review_status": "peer reviewed, TOSEM",
       "retraction_or_correction_status": "none observed",
-      "research_domain": ["software_security", "LLM_code_analysis", "automated_program_repair"],
-      "methodology": ["systematic_literature_review", "58_papers_total", "43_published_across_25_venues", "15_preprints", "three_research_questions", "exclusion_criteria_enumerated"],
+      "research_domain": [
+        "software_security",
+        "LLM_code_analysis",
+        "automated_program_repair"
+      ],
+      "methodology": [
+        "systematic_literature_review",
+        "58_papers_total",
+        "43_published_across_25_venues",
+        "15_preprints",
+        "three_research_questions",
+        "exclusion_criteria_enumerated"
+      ],
       "coverage_window": "2018-2024",
       "datasets_analyzed": "surveys datasets used by primary studies; notes prevalence of synthetic data for repair and real-world data lacking test cases",
       "key_contributions_extracted": [
@@ -202,21 +372,68 @@
         "L5 Lack of deployment consideration (notably IDE and workflow integration)",
         "L6 Lack of high accuracy and robustness"
       ],
-      "reproducibility": {"protocol_reported": true, "search_strings_reported": "partially", "living_artifact_repo": "not stated", "independently_replicated": false},
-      "confidence": {"source_authenticity": "high", "method_rigor": "high_for_a_review", "transfer_to_production": "not_applicable_review"},
+      "reproducibility": {
+        "protocol_reported": true,
+        "search_strings_reported": "partially",
+        "living_artifact_repo": "not stated",
+        "independently_replicated": false
+      },
+      "confidence": {
+        "source_authenticity": "high",
+        "method_rigor": "high_for_a_review",
+        "transfer_to_production": "not_applicable_review"
+      },
       "evidence_status": "not_independently_verified",
-      "superseded_by": ["D1", "D2"],
-      "retained_for": "detection/repair adaptation split; limitation taxonomy as a cross-check"
+      "superseded_by": [
+        "D1",
+        "D2"
+      ],
+      "retained_for": "detection/repair adaptation split; limitation taxonomy as a cross-check",
+      "peer_review_tier": "secondary_source",
+      "peer_review_tier_basis": "TOSEM publication reported by citing works. Publisher record not opened."
     }
   ],
   "corpus_level_observations": {
     "documents_verified": 5,
     "documents_unverifiable": 0,
-    "peer_reviewed": ["D1 (accepted)", "D2", "D4", "D5"],
-    "preprints": ["D3"],
-    "redistributable": ["D3"],
-    "non_redistributable": ["D1", "D2", "D4", "D5"],
+    "preprints": [
+      "D3"
+    ],
+    "redistributable": [
+      "D3"
+    ],
+    "non_redistributable": [
+      "D1",
+      "D2",
+      "D4",
+      "D5"
+    ],
     "independent_replications_found": 0,
-    "pairwise_error_correlation_reported_by_any": false
+    "pairwise_error_correlation_reported_by_any": false,
+    "peer_review_tiers": {
+      "publisher_confirmed": [],
+      "manuscript_asserted": [
+        "D1",
+        "D4"
+      ],
+      "secondary_source": [
+        "D2",
+        "D5"
+      ],
+      "unreviewed": [
+        "D3"
+      ],
+      "note": "No publisher record was opened for any source in this pass. Tiering replaces a single peer-reviewed list that conflated asserted acceptance with confirmation."
+    },
+    "schema_enforcement": {
+      "replication_status": "required_field_per_claim",
+      "permitted_downstream_uses": [
+        "citation_only",
+        "hypothesis_seed",
+        "design_input",
+        "security_rule"
+      ],
+      "gate": "A security rule may not cite a claim whose verification_status is not 'verified'."
+    }
   }
 }

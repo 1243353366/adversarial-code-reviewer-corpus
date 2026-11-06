@@ -14,6 +14,7 @@ This repository contains **analysis, metadata and citations only**. It does not 
 | [`corpus/out/03-contradictions-and-open-questions.md`](corpus/out/03-contradictions-and-open-questions.md) | Where the sources disagree, and what remains unresolved |
 | [`corpus/out/04-provenance-and-licensing.md`](corpus/out/04-provenance-and-licensing.md) | Redistribution constraints and the evidence-status ledger |
 | [`corpus/out/05-absurdity-lane.md`](corpus/out/05-absurdity-lane.md) | Hypothesis-generation lane built on absurd-humor properties: operators, output contract, gates, metrics |
+| [`corpus/out/06-external-review-response.md`](corpus/out/06-external-review-response.md) | Response to external review: citation verification, triage, seven accepted specification deltas |
 | [`adversarial-reviewer-corpus-audit.md`](adversarial-reviewer-corpus-audit.md) | Audit of an earlier proposed reading list; separates real sources from plausible-sounding ones |
 | [`paper-links-priority.md`](paper-links-priority.md) | The five verified sources with canonical records |
 
@@ -21,11 +22,11 @@ This repository contains **analysis, metadata and citations only**. It does not 
 
 | ID | Paper | Record | Peer reviewed |
 |---|---|---|---|
-| D1 | A Systematic Literature Review on Detecting Software Vulnerabilities with LLMs | [arXiv:2507.22659](https://arxiv.org/abs/2507.22659) | Accepted, TOSEM |
-| D2 | LLMs in Software Security: A Survey | [arXiv:2502.07049](https://arxiv.org/abs/2502.07049) | ACM CSUR 58(5) |
-| D3 | LLMs Versus Static Code Analysis Tools: A Systematic Benchmark | [arXiv:2508.04448](https://arxiv.org/abs/2508.04448) | No, thesis preprint |
-| D4 | Outside the Comfort Zone | [arXiv:2408.16400](https://arxiv.org/abs/2408.16400) | ESORICS 2024 |
-| D5 | Vulnerability Detection and Repair: Literature Review | [arXiv:2404.02525](https://arxiv.org/abs/2404.02525) | TOSEM |
+| D1 | A Systematic Literature Review on Detecting Software Vulnerabilities with LLMs | [arXiv:2507.22659](https://arxiv.org/abs/2507.22659) | Manuscript-asserted (TOSEM) |
+| D2 | LLMs in Software Security: A Survey | [arXiv:2502.07049](https://arxiv.org/abs/2502.07049) | Secondary source (CSUR) |
+| D3 | LLMs Versus Static Code Analysis Tools: A Systematic Benchmark | [arXiv:2508.04448](https://arxiv.org/abs/2508.04448) | Unreviewed preprint |
+| D4 | Outside the Comfort Zone | [arXiv:2408.16400](https://arxiv.org/abs/2408.16400) | Manuscript-asserted (ESORICS 2024) |
+| D5 | Vulnerability Detection and Repair: Literature Review | [arXiv:2404.02525](https://arxiv.org/abs/2404.02525) | Secondary source (TOSEM) |
 
 ## Evidence classification
 
@@ -37,6 +38,8 @@ Every claim in this repository carries a tag:
 - `[D]` derived engineering hypothesis, generated here, unpublished
 - `[P]` unverified implementation proposal
 - `[C]` contradicted or in tension with another source here
+
+Peer-review status is tiered: **publisher-confirmed**, **manuscript-asserted**, **secondary source**, **unreviewed**. No publisher record was opened for any source in this pass, so nothing here is publisher-confirmed. See [corpus/out/04-provenance-and-licensing.md](corpus/out/04-provenance-and-licensing.md).
 
 No proposed implementation is presented as a published research finding. Four of the five sources are not open access and are not redistributable; retrieve them from arXiv.
 
