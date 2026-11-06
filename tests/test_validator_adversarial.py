@@ -20,6 +20,7 @@ from validate_corpus import (
     check_extension_keys,
     check_license_consistency,
     check_locator_resolution,
+    check_locator_witness,
     check_peer_review_tiers,
     check_replication_claims,
     check_status_fields,
@@ -180,18 +181,23 @@ def test_admits_wholesale_source_substitution():
     assert schema_errors(broken, SCHEMA) == []
 
 
-def test_admits_plausible_invented_locator():
-    """Blind spot: a section name cannot be checked without the source text.
+def test_plausible_invented_locator_needs_a_witness_to_catch():
+    """The section-existence check cannot tell an invented section from a real one.
 
-    This is why `security_rule` also demands a human re-check, not just a verified flag.
+    This was an admitted blind spot. It is now caught one layer up, by requiring a verbatim
+    witness with an offset and a retrieval hash, so the assertion moved from "we cannot see
+    it" to "we see it only where a witness is absent". Both halves are asserted here so
+    neither can be quietly dropped.
     """
-    broken = copy.deepcopy(CLAIMS)
-    target = _first_unverified(broken)
-    target["locator"] = {"section": "III Methods", "table": "Table II"}
-    target["locator_status"] = "verified"
-    target["verification_status"] = "verified_against_source"
-    assert check_locator_resolution(broken) == []
-    assert check_claim_gate(broken, DOC_IDS) == []
+    claims = copy.deepcopy(CLAIMS)
+    for cl in claims["claims"]:
+        if cl["locator_status"] == "unavailable":
+            cl["locator_status"] = "verified"
+            cl["locator"]["section"] = "Section 4.2"
+            break
+    assert not check_locator_resolution(claims), "section-existence check should not see it"
+    retrievals = {"retrievals": {}}
+    assert check_locator_witness(claims, retrievals), "witness check should block it"
 
 
 def test_admits_trivially_true_claim_text():
