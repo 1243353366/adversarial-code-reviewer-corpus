@@ -357,6 +357,90 @@ def check_status_fields(meta: dict) -> list[str]:
     return errors
 
 
+COPYLEFT = re.compile(r"\b(CC BY-SA|BY-SA|ShareAlike|share-alike|copyleft|AGPL|GPL-3)\b", re.I)
+SCOPE_EXPANSION = re.compile(
+    r"(whole|entire|any)\s+(compilation|collection|repository|package)"
+    r"|must\s+(itself\s+)?(be\s+)?licen[cs]ed"
+    r"|inherits?\s+the\s+licen[cs]e"
+    r"|licen[cs]e\s+(propagates|extends)\s+to",
+    re.I,
+)
+WITHDRAWN = re.compile(
+    r"\b(not|never|no|wrong|withdrawn|overstated|too broad|does not|need not|exception|"
+    r"misreading|cannot)\b",
+    re.I,
+)
+
+
+def check_licence_scope(paths: list[str]) -> list[str]:
+    """A ShareAlike claim that reaches beyond adapted material, stated as fact.
+
+    The original defect in this repository was exactly this sentence class: a prose
+    assertion that a copyleft license covers the compilation. No structural check caught
+    it, so it survived a review whose job was to catch it. Withdrawal lines and quoted
+    examples are allowed; an unqualified scope-expansion claim is not.
+    """
+    errors = []
+    for path in paths:
+        p = Path(path)
+        if p.suffix != ".md":
+            continue
+        text = p.read_text()
+        text = re.sub(r"```.*?```", "", text, flags=re.S)
+        text = re.sub(r"`[^`]*`", "", text)
+        for lineno, line in enumerate(text.splitlines(), 1):
+            if not COPYLEFT.search(line) or not SCOPE_EXPANSION.search(line):
+                continue
+            if WITHDRAWN.search(line):
+                continue
+            errors.append(
+                f"{p.name}:{lineno}: copyleft scope asserted beyond adapted material: "
+                f"{line.strip()[:90]!r}"
+            )
+    return errors
+
+
+def check_locator_witness(claims_doc: dict, retrievals: dict) -> list[str]:
+    """A verified locator needs a verbatim witness, not just a plausible section number.
+
+    An invented section slides past every existence check; a quote with an offset and an
+    artifact hash does not, because a second party can re-fetch and compare. Offline this
+    cannot prove the quote exists in the source. It can prove the record is shaped so that
+    someone else can.
+    """
+    errors = []
+    known = retrievals.get("retrievals", {})
+    for claim in claims_doc.get("claims", []):
+        if claim.get("locator_status") != "verified":
+            continue
+        cid = claim.get("claim_id")
+        witness = claim.get("locator", {}).get("witness")
+        if not isinstance(witness, dict):
+            errors.append(f"{cid}: verified locator has no verbatim witness")
+            continue
+        quote = (witness.get("quote") or "").strip()
+        words = len(quote.split())
+        if words < 8:
+            errors.append(f"{cid}: witness quote is {words} words; a fragment proves nothing")
+        if words > 80:
+            errors.append(f"{cid}: witness quote is {words} words; trim to the sentence")
+        if witness.get("length") != len(quote):
+            errors.append(
+                f"{cid}: witness length {witness.get('length')} != quote length {len(quote)}"
+            )
+        if not isinstance(witness.get("offset"), int) or witness["offset"] < 0:
+            errors.append(f"{cid}: witness offset missing or negative")
+        rid = witness.get("retrieval_id")
+        if rid not in known:
+            errors.append(f"{cid}: witness cites unknown retrieval {rid!r}")
+        elif not known[rid].get("artifact_sha256"):
+            errors.append(f"{cid}: retrieval {rid!r} records no artifact hash")
+        claim_text = (claim.get("claim_text") or "").lower()
+        if quote and quote.lower() in claim_text:
+            errors.append(f"{cid}: witness quote restates the claim instead of the source")
+    return errors
+
+
 def _tracked_files(root: Path) -> list[str]:
     try:
         out = subprocess.run(
@@ -387,6 +471,10 @@ def validate_all(root: Path = ROOT) -> dict[str, list[str]]:
     report["replication_claims"] = check_replication_claims(claims_doc, meta)
     report["locator_resolution"] = check_locator_resolution(claims_doc)
     report["extension_keys"] = check_extension_keys(meta)
+    report["licence_scope"] = check_licence_scope(tracked)
+    report["locator_witness"] = check_locator_witness(
+        claims_doc, load(root / "harness/retrievals/D3.json") if (root / "harness/retrievals/D3.json").exists() else {}
+    )
     report["status_fields"] = check_status_fields(meta)
     report["status_language"] = check_status_language(tracked)
     return report

@@ -10,7 +10,7 @@ The question asked was narrow and correct. Not "are the checks right" but "would
 
 ## 1. Method
 
-Twenty mutations, each representing a move an adversary would make to ship a fabricated claim. Sixteen are now blocked by a named check. Four are not, and those four are committed as **passing** tests under `test_admits_*`, so the blind spot is asserted in code rather than described as a caveat.
+Twenty mutations, each representing a move an adversary would make to ship a fabricated claim. Three are now blocked by a named check that did not exist when they were written. The remainder are committed as **passing** tests under `test_admits_*`, so the blind spot is asserted in code rather than described as a caveat.
 
 Two of the eighteen blocked cases were only found after the first version of the check failed on the runner and not locally, which is the recurring lesson of this repository: a check that has only ever run on the machine that wrote it has not run.
 
@@ -25,7 +25,7 @@ $ pytest -q tests/test_validator_adversarial.py
 
 ## 2. Attacks that were not blocked, and the checks added because of them
 
-Six of the fourteen checks now in `tools/validate_corpus.py` exist because a mutation passed the first seven.
+Six of the sixteen checks now in `tools/validate_corpus.py` exist because a mutation passed the first seven.
 
 | Mutation | Was it caught? | Check added |
 |---|---|---|
@@ -52,7 +52,7 @@ Recorded as `test_admits_*`. Each has a reason and a route to closure.
 
 **Wholesale source substitution.** Change the `arxiv_id`, the `source_url` and the `title` together and every check passes. There is no content fingerprint binding the record to the document it claims to be. *Closure:* compare the stored title against the arXiv API, again a network check. The cheap offline half is already done: `arxiv_id` must equal the id embedded in `source_url`, which forces an adversary to change both and makes the substitution visible in a diff.
 
-**A plausible invented locator.** `{"section": "III Methods"}` marked `verified` passes, because verifying a section name requires the source text, and the source text is deliberately not in the tree. *Closure:* none offline. This is precisely why the `security_rule` gate demands two independent conditions, a verified claim and a verified locator, and why a human re-check remains mandatory before any claim is used to build a detector. The validator can force a claim to be *checkable*. It cannot check it.
+**A plausible invented locator.** `{"section": "III Methods"}` marked `verified` passes the section-existence check, because verifying a section name requires the source text, and the source text is deliberately not in the tree. *Closure:* partial, as of the `locator_witness` check. A verified claim must now carry a verbatim quote, its offset, its length and a retrieval id that resolves to a recorded artifact hash, so an invented section has to be accompanied by an invented sentence that someone can disprove by re-fetching. That raises the cost of fabricating a locator from typing a section number to producing a witness that survives `curl | sha256sum`. It does not verify the quote's aptness offline; only review does that. The validator can force a claim to be *checkable*. It cannot check it.
 
 **A trivially true claim.** "The paper exists and contains words about the topic" passes every field check. Shape is enforceable; meaning is not. *Closure:* review. Stated plainly because a validator that appears to validate claim quality would be worse than no validator.
 

@@ -13,7 +13,13 @@
       "replication_status": "none",
       "locator": {
         "section": "V Analysis of Results",
-        "table": "Table XIII"
+        "table": "Table XIII",
+        "witness": {
+          "quote": "The language-based scanners achieve higher mean F-1 scores,0.797, 0.753 and 0.750, than their static counterparts, which score 0.260, 0.386 and 0.546, respectively.",
+          "offset": 1494,
+          "length": 164,
+          "retrieval_id": "D3-2026-11-06-abs"
+        }
       },
       "locator_status": "verified",
       "permitted_downstream_uses": [
@@ -21,7 +27,7 @@
         "design_input",
         "hypothesis_seed"
       ],
-      "notes": "Verified in the remediation pass against the retrieved arXiv HTML. Previously the tool-to-score mapping was inferred from abstract ordering and recorded as such; the paper states the mapping explicitly, so the inference has been replaced by a quotable sentence."
+      "notes": "Verified in the remediation pass against the retrieved arXiv HTML. Previously the tool-to-score mapping was inferred from abstract ordering and recorded as such; the paper states the mapping explicitly, so the inference has been replaced by a quotable sentence. Witness quote and offset recorded against retrieval D3-2026-11-06-abs."
     },
     {
       "claim_id": "D3-C02",
@@ -33,7 +39,13 @@
       "replication_status": "none",
       "locator": {
         "section": "V Analysis of Results",
-        "table": "Table XIII"
+        "table": "Table XIII",
+        "witness": {
+          "quote": "The language-based scanners achieve higher mean F-1 scores,0.797, 0.753 and 0.750, than their static counterparts, which score 0.260, 0.386 and 0.546, respectively.",
+          "offset": 1494,
+          "length": 164,
+          "retrieval_id": "D3-2026-11-06-abs"
+        }
       },
       "locator_status": "verified",
       "permitted_downstream_uses": [
@@ -41,7 +53,7 @@
         "design_input",
         "hypothesis_seed"
       ],
-      "notes": "Same sentence pair as D3-C01."
+      "notes": "Same sentence pair as D3-C01. Witness quote and offset recorded against retrieval D3-2026-11-06-abs."
     },
     {
       "claim_id": "D3-C03",
@@ -52,14 +64,20 @@
       "verification_status": "verified_against_source",
       "replication_status": "none",
       "locator": {
-        "section": "Abstract"
+        "section": "Abstract",
+        "witness": {
+          "quote": "LLMs' advantage originates from superior recall, confirming an ability to reason across broader code contexts.",
+          "offset": 1659,
+          "length": 110,
+          "retrieval_id": "D3-2026-11-06-abs"
+        }
       },
       "locator_status": "verified",
       "permitted_downstream_uses": [
         "citation_only",
         "design_input"
       ],
-      "notes": "Present in the retrieved abstract text."
+      "notes": "Present in the retrieved abstract text. Witness quote and offset recorded against retrieval D3-2026-11-06-abs."
     },
     {
       "claim_id": "D3-C04",

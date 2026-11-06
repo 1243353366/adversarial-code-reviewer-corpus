@@ -23,6 +23,7 @@ from typing import Callable, NamedTuple
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 
+import check_protection as CP  # noqa: E402
 import validate_corpus as V  # noqa: E402
 
 META = V.load(ROOT / "corpus/out/research-metadata.json")
@@ -324,6 +325,55 @@ def _check_pilot_arithmetic(state: dict) -> list[str]:
     return []
 
 
+# R21/R22/R23: the three previously stated gaps
+def r_licence_scope(state):
+    if isinstance(state, str):
+        return V.check_licence_scope([_write_tmp(state)])
+    return V.check_licence_scope(V._tracked_files(ROOT))
+
+
+def _witness_claims():
+    return CLAIMS, json.loads((ROOT / "harness/retrievals/D3.json").read_text())
+
+
+def r_locator_witness(state):
+    claims, retrievals = state
+    return V.check_locator_witness(claims, retrievals)
+
+
+def _witness_stripped():
+    c = copy.deepcopy(CLAIMS)
+    for cl in c["claims"]:
+        if cl["locator_status"] == "verified":
+            cl["locator"].pop("witness", None)
+            break
+    return (c, json.loads((ROOT / "harness/retrievals/D3.json").read_text()))
+
+
+def _as_payload(flat: dict) -> dict:
+    return {
+        "required_status_checks": {"contexts": [flat["required_context"]], "strict": flat["strict"]},
+        "enforce_admins": {"enabled": flat["enforce_admins"]},
+        "allow_force_pushes": {"enabled": flat["allow_force_pushes"]},
+        "allow_deletions": {"enabled": flat["allow_deletions"]},
+    }
+
+
+def r_live_protection(state):
+    return CP.compare(state["required"], CP.normalize(state["payload"]))
+
+
+def _live_historical():
+    policy = CP.load_expected()
+    flat = dict(policy["recorded"], enforce_admins=False)
+    return {"required": policy["required"], "payload": _as_payload(flat)}
+
+
+def _live_current():
+    policy = CP.load_expected()
+    return {"required": policy["required"], "payload": _as_payload(policy["recorded"])}
+
+
 REGISTRY: list[Repro] = [
     Repro("R01", "D3 acceptance status asserted without its basis",
           "a README line claiming TOSEM acceptance",
@@ -431,6 +481,21 @@ REGISTRY: list[Repro] = [
           r_historical_figures,
           lambda: "## Chronology\nThe content was tested, 50 tests passing and 14 checks green, and that is why.",
           lambda: _read("README.md")),
+    Repro("R21", "copyleft scope asserted beyond adapted material as fact",
+          "the withdrawn sentence, reinstated in a corpus note",
+          r_licence_scope,
+          lambda: "A compilation incorporating CC BY-SA material must itself be licensed CC BY-SA.",
+          lambda: "checked in place"),
+    Repro("R22", "verified locator with no verbatim witness",
+          "a plausible section number and nothing behind it",
+          r_locator_witness,
+          _witness_stripped,
+          _witness_claims),
+    Repro("R23", "protection snapshot that cannot notice a setting loosened later",
+          "live payload with enforce_admins back on for the pushing account",
+          r_live_protection,
+          _live_historical,
+          _live_current),
 ]
 
 

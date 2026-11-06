@@ -5,15 +5,31 @@
   "description": "One record per exported claim. Binds a claim to a locator, an evidence class and an explicit set of permitted downstream uses, so a fabricated or unverified claim cannot be consumed as a security rule.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "generated", "locator_policy", "claims"],
+  "required": [
+    "schema_version",
+    "generated",
+    "locator_policy",
+    "claims"
+  ],
   "properties": {
-    "schema_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
-    "generated": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
-    "locator_policy": { "type": "string", "minLength": 20 },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "generated": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "locator_policy": {
+      "type": "string",
+      "minLength": 20
+    },
     "claims": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/claim" }
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
     }
   },
   "$defs": {
@@ -33,10 +49,23 @@
         "permitted_downstream_uses"
       ],
       "properties": {
-        "claim_id": { "type": "string", "pattern": "^D[0-9]+-C[0-9]{2}$" },
-        "document_id": { "type": "string", "pattern": "^D[0-9]+$" },
-        "source_version": { "type": "string", "pattern": "^v[0-9]+$" },
-        "claim_text": { "type": "string", "minLength": 15, "maxLength": 600 },
+        "claim_id": {
+          "type": "string",
+          "pattern": "^D[0-9]+-C[0-9]{2}$"
+        },
+        "document_id": {
+          "type": "string",
+          "pattern": "^D[0-9]+$"
+        },
+        "source_version": {
+          "type": "string",
+          "pattern": "^v[0-9]+$"
+        },
+        "claim_text": {
+          "type": "string",
+          "minLength": 15,
+          "maxLength": 600
+        },
         "evidence_type": {
           "enum": [
             "source_asserted_result",
@@ -47,30 +76,104 @@
           ]
         },
         "verification_status": {
-          "enum": ["verified_against_source", "unverified", "contradicted"]
+          "enum": [
+            "verified_against_source",
+            "unverified",
+            "contradicted"
+          ]
         },
-        "replication_status": { "enum": ["none", "independent", "partial"] },
+        "replication_status": {
+          "enum": [
+            "none",
+            "independent",
+            "partial"
+          ]
+        },
         "locator": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["section"],
+          "required": [
+            "section"
+          ],
           "properties": {
-            "section": { "type": "string", "minLength": 2 },
-            "table": { "type": "string" },
-            "figure": { "type": "string" },
-            "page": { "type": "integer", "minimum": 1 },
-            "line_range": { "type": "string", "pattern": "^[0-9]+-[0-9]+$" }
+            "section": {
+              "type": "string",
+              "minLength": 2
+            },
+            "table": {
+              "type": "string"
+            },
+            "figure": {
+              "type": "string"
+            },
+            "page": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "line_range": {
+              "type": "string",
+              "pattern": "^[0-9]+-[0-9]+$"
+            },
+            "witness": {
+              "type": "object",
+              "description": "Verbatim witness for a verified locator; enforced by check_locator_witness.",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "offset",
+                "length",
+                "retrieval_id"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "minLength": 40
+                },
+                "offset": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "length": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "retrieval_id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
           }
         },
-        "locator_status": { "enum": ["verified", "provisional", "unavailable"] },
+        "locator_status": {
+          "enum": [
+            "verified",
+            "provisional",
+            "unavailable"
+          ]
+        },
         "permitted_downstream_uses": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "enum": ["citation_only", "hypothesis_seed", "design_input", "security_rule"] }
+          "items": {
+            "enum": [
+              "citation_only",
+              "hypothesis_seed",
+              "design_input",
+              "security_rule"
+            ]
+          }
         },
-        "contradicting_evidence": { "type": "array", "items": { "type": "string" } },
-        "notes": { "type": "string" }
+        "contradicting_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
       }
     }
   }
