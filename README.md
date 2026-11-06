@@ -13,6 +13,7 @@ This repository contains **analysis, metadata and citations only**. It does not 
 | [`corpus/out/02-engineering-translation.md`](corpus/out/02-engineering-translation.md) | Repository relevance map, implementation specifications, acceptance criteria, tests |
 | [`corpus/out/03-contradictions-and-open-questions.md`](corpus/out/03-contradictions-and-open-questions.md) | Where the sources disagree, and what remains unresolved |
 | [`corpus/out/04-provenance-and-licensing.md`](corpus/out/04-provenance-and-licensing.md) | Redistribution constraints and the evidence-status ledger |
+| [`corpus/out/05-absurdity-lane.md`](corpus/out/05-absurdity-lane.md) | Hypothesis-generation lane built on absurd-humor properties: operators, output contract, gates, metrics |
 | [`adversarial-reviewer-corpus-audit.md`](adversarial-reviewer-corpus-audit.md) | Audit of an earlier proposed reading list; separates real sources from plausible-sounding ones |
 | [`paper-links-priority.md`](paper-links-priority.md) | The five verified sources with canonical records |
 
