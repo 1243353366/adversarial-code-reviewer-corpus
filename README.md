@@ -19,6 +19,7 @@ This repository contains **analysis, metadata and citations only**. It does not 
 | [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md) | Attack on the validators: six checks added, four blind spots admitted as tests |
 | [`corpus/out/09-oracle-and-pilot-defects.md`](corpus/out/09-oracle-and-pilot-defects.md) | What counts as an oracle, and the pilot the plan was missing |
 | [`corpus/out/10-harness-metric-defects.md`](corpus/out/10-harness-metric-defects.md) | Three metric defects: a pilot too small to stratify, unrequired verdicts, a circular fabrication rate |
+| [`CHANGELOG.md`](CHANGELOG.md) | Every defect with its reproduction, regression test and method justification |
 | [`corpus/out/claims.json`](corpus/out/claims.json) | Claim-level manifest with locators, evidence class and permitted downstream uses |
 | [`adversarial-reviewer-corpus-audit.md`](adversarial-reviewer-corpus-audit.md) | Audit of an earlier proposed reading list; separates real sources from plausible-sounding ones |
 | [`paper-links-priority.md`](paper-links-priority.md) | The five verified sources with canonical records |
@@ -40,7 +41,8 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 ```
 python tools/validate_corpus.py   # 14 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 50 tests: negative cases, adversarial attacks, admitted blind spots
+pytest -q                         # 76 tests: negative cases, adversarial attacks, admitted blind spots
+python tools/repro.py --check     # 20 defects: each reproduces on its historical state, then stays caught
 ```
 
 Fourteen checks, not four. The later ones were added by attacking the validators themselves: six of them exist because a mutation got through the first version. The four mutations that still get through are written as passing tests, so the limits are visible in code rather than discovered in an incident. See [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md).

@@ -1,0 +1,22 @@
+{
+  "branch": "main",
+  "repo": "1243353366/adversarial-code-reviewer-corpus",
+  "required": {
+    "required_context": "corpus",
+    "strict": true,
+    "enforce_admins": true,
+    "allow_force_pushes": false,
+    "allow_deletions": false
+  },
+  "recorded": {
+    "required_context": "corpus",
+    "strict": true,
+    "enforce_admins": true,
+    "allow_force_pushes": false,
+    "allow_deletions": false
+  },
+  "recorded_at": "2026-11-06",
+  "recorded_by": "GET /repos/{repo}/branches/main/protection after the fix",
+  "note": "required_context is the job name inside .github/workflows/validate.yml, not the workflow name. A context that matches no job never satisfies itself and the merge stays blocked while the PR shows green checks.",
+  "verify_live": "curl -s -H \"Authorization: Bearer $GITHUB_ACCESS_TOKEN\" https://api.github.com/repos/1243353366/adversarial-code-reviewer-corpus/branches/main/protection | python3 -c \"import sys,json;d=json.load(sys.stdin);print((d['required_status_checks']['contexts'], d['enforce_admins']['enabled']))\""
+}

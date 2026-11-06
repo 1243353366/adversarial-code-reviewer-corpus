@@ -37,7 +37,7 @@ A reviewer that reports "I found three issues in this repository" has produced f
 
 **Fixed.** `S6` requires a verdict for every sample including `clean`, and excludes any reviewer that cannot produce one.
 
-This is the same shape as the label problem in D4. Absence of a claim is not a claim of absence, and a matrix built by conflating them measures reporting behaviour while calling it error.
+This is the same shape as the label problem in D4. Absence of a claim is not a claim of absence, and a matrix built by conflating them measures reporting behavior while calling it error.
 
 ---
 
