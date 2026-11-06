@@ -1,0 +1,5 @@
+# Retrieved full texts are NOT redistributable (arXiv non-exclusive distribution license).
+*.pdf
+*.txt
+*.html
+api.xml
