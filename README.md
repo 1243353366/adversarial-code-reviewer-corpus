@@ -70,6 +70,30 @@ This is the same failure mode as the licence paragraph and the fabricated citati
 
 The rule is enforced by the platform instead of by intention: a standard that lives in prose is a standard that has already been broken once.
 
+## Declared controls and effective controls
+
+This repository started as a joke about whether absurdity could sharpen an adversarial code review. That is not a summary of the joke, which was vulgar and is not reproduced here. It is an accurate description of what survived: a reviewer primed to violate expectations may notice what a disciplined one walks past, which turned into a corpus, which turned into a review, which turned into this.
+
+The joke did not produce a theory of software quality. It produced a worked demonstration of one failure mode, five times over, close enough together that the shape became hard to ignore.
+
+**The shape.** A policy exists. A configuration claims to enforce it. The execution path permits an exception. Someone tests the boundary and finds the gap.
+
+| # | Declared control | What actually happened |
+|---|---|---|
+| 1 | CC BY-SA requires the whole compilation to carry the licence | ShareAlike attaches to adapted material, not to a collection holding an unmodified work. The claim was wrong and is withdrawn. |
+| 2 | Sources listed as verified | Several named papers did not exist. Verification meant the identifier resolved, and for those it did not. |
+| 3 | `schema_version: "1.1"` | Nothing validated against it for the first three revisions. A version number with no validator is a comment. |
+| 4 | The CI gate | The workflow file sat outside `.github/`, and the dev requirements were excluded by a `*.txt` ignore rule. The first armed run failed before executing a single check. |
+| 5 | Branch protection requiring the `validate` check | Enabled with `enforce_admins` off. The next direct push succeeded, tagged `Bypassed rule violations`. |
+
+Entries 4 and 5 share a cause worth naming: both controls were reported as working before anything had exercised them. The workflow was described as the gate while it was a file in the wrong directory; the protection was described as binding while the account making the pushes could step around it. Neither was a lie. Both were configuration mistaken for behaviour.
+
+**The difference that mattered.** Entry 5 was found by pushing to main and reading the rejection, not by reading the settings. A configuration is a claim about what should happen. A rejected push is evidence about what does. The repository now prefers the second, which is the same rule it applies to vulnerability claims, arrived at by failing to apply it to itself.
+
+**Why the agent's own failure is in here.** The README records that an AI agent working in this repository pushed directly to main, that the content passed its tests, and that the process violation counted anyway. Automated contribution is not evidence of correctness. A contributor whose errors go unrecorded is a control that has never been tested, and the intent here is to test it in public.
+
+The soundtrack to this was apparently Steel Panther's *Community Property*. That is not a methodology endorsement, and no part of the corpus validates it.
+
 ## Evidence classification
 
 Every claim in this repository carries a tag:
