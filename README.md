@@ -32,14 +32,15 @@ This repository contains **analysis, metadata and citations only**. It does not 
 
 ## Checks
 
-Metadata is enforced, not just documented. On every push and pull request, once `ci/validate.yml` is moved to `.github/workflows/` (GitHub requires the `workflow` OAuth scope to commit a workflow file; this grant carries `repo` only):
+Metadata is enforced, not just documented. On every push and pull request:
+
 
 ```
 python tools/validate_corpus.py   # schema, provenance, evidence gate, licensing guard
 pytest -q                         # 24 tests, including negative tests that the schema rejects bad input
 ```
 
-Both pass locally on this commit. `ci/validate.yml` holds the workflow definition.
+Both pass locally and on the runner (Python 3.11, `ubuntu-latest`).
 
 The gate that matters most: a claim may only be used as a `security_rule` if it is both verified against the source and carries a verified locator, and never if it is an interpretation or a derived inference. Ten claims are currently in the manifest; three are verified, seven are provisional and say so.
 

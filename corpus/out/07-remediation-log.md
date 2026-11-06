@@ -60,7 +60,6 @@ tests/
     test_citations.py                identifiers, URLs and tier roll-ups agree
     test_claim_manifest.py           the downstream-use gate holds
 .github/workflows/validate.yml       runs both on every push and pull request
-ci/validate.yml                     same file, staged outside .github pending OAuth scope
 corpus/out/claims.json               ten claims, locator-typed
 ```
 
@@ -99,9 +98,11 @@ Ten of ten source claims in the manifest report `replication_status: none`, and 
 
 **No claim locators were invented.** Ten claims are in the manifest. Three are marked `verified` because they were re-checked against retrieved text in this pass. The other seven are `provisional`, with `section: "unresolved"`, and say so. That includes D4-C01, the Semgrep-oracle claim that the entire label-provenance architecture rests on. Marking it provisional is uncomfortable and correct: the full texts from the acquisition run are not in the tree, so its locator cannot be re-established without re-retrieval.
 
-**The workflow file is staged, not armed.** GitHub refuses a push that creates `.github/workflows/*.yml` unless the OAuth grant carries the `workflow` scope, and this grant carries `repo` only. The file is therefore committed at `ci/validate.yml` with instructions to move it into place once the scope is granted. Claiming CI is running would be false; claiming it cannot run would also be false, since the workflow is written and both jobs pass locally.
+**CI took three attempts, and the middle one is the instructive one.** GitHub refuses any push creating `.github/workflows/*.yml` without the `workflow` OAuth scope, so the workflow first landed at `ci/validate.yml`; the scope was then granted and the file moved. The first armed run failed at dependency installation: `requirements-dev.txt` was never committed, because `.gitignore` carried a blanket `*.txt` rule written to keep retrieved full texts out of the tree, and it swallowed the requirements file with them.
 
-**No CI result is claimed here that was not observed.** The checks pass locally on this tree. Whether a runner agrees is a separate fact, reported separately once observed.
+That failure was only possible because the check ran somewhere other than my machine. It also exposed a second-order bug: the licensing guard itself flagged `.txt` files anywhere in the repository, so committing the requirements file would have tripped the very check meant to protect redistribution. Both are fixed. The guard now scopes `.txt` and `.html` to the corpus tree and still blocks `.pdf`, `.epub` and `.docx` anywhere, with a test covering both directions.
+
+**No CI result is claimed here that was not observed.** Run [42299428790](https://github.com/1243353366/adversarial-code-reviewer-corpus/actions/runs/42299428790) on `ubuntu-latest`, Python 3.11, all six steps executed: validator 7/7 PASS, **25 passed**. An earlier run on the same branch failed at dependency installation, and that failure is recorded above rather than deleted.
 
 **No implementation of the reviewer itself.** The review recommends fixing controls before adding papers. Same logic applies to code: the harness comes before the detector, and the schema comes before both.
 
@@ -122,7 +123,11 @@ $ python tools/validate_corpus.py
 [    PASS] licensing_guard
 
 $ pytest -q
-24 passed
+25 passed
 ```
 
+On the runner, same tree, same commit: 7/7 PASS and 25 passed.
+
 The validator failed on first run, on `doi: 'not_resolved'` in three records and a month-precision version date. Those were real defects of the kind the review predicted, found by the tooling on its first execution, which is the argument for the tooling.
+
+The count in this log has now been wrong once, in the direction of optimism: 24 tests were claimed while the runner could not install its dependencies, and one of the 24 was added before the file that installs them was committed. Everything above is stated from the run log, not from intent.
