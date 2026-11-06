@@ -47,6 +47,16 @@ Both pass locally and on the runner (Python 3.11, `ubuntu-latest`).
 
 The gate that matters most: a claim may only be used as a `security_rule` if it is both verified against the source and carries a verified locator, and never if it is an interpretation or a derived inference. Ten claims are currently in the manifest; three are verified against retrieved text, seven have no locator that can be produced from material in the tree and are marked unavailable rather than guessed.
 
+## Where this repository broke its own rules
+
+The rule is stated in the standing instructions and repeated throughout: nothing lands without independent review, and no change reaches a protected branch on trust. It has been broken once, and the record belongs here rather than in a commit message nobody reads.
+
+**2026-11-06: direct push to `main`.** Two commits landed on `main` without a pull request. They were the validator hardening commit `c8300b55` and the fix that followed it. The content was tested, 47 tests passing and 13 checks green, and that is exactly why this is worth recording: the work was fine and the process was not. A change that proves itself after the fact has still skipped the step that exists to catch the change that does not.
+
+The commit was made by an AI agent working on the maintainer's behalf, against a checked-out `main`. The maintainer is accountable for it, because authorising an agent to work in a repository is authorising its mistakes along with its work. The agent disclosed it in the same message that reported the result, which is the only part of this that went right.
+
+**What changed as a result.** Branch protection is now enabled on `main`: pull requests are required, the `validate` job must pass, force-pushes and branch deletion are blocked. The rule is enforced by the platform instead of by intention. This is the same correction as everywhere else in this project, applied to the project itself: a standard that lives in prose is a standard that has already been broken once.
+
 ## Evidence classification
 
 Every claim in this repository carries a tag:
