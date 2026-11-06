@@ -32,7 +32,7 @@ All five located against arXiv primary records on 2026-11-06. Priority labels as
 - Authors: Damian Gnieciak, Tomasz Szandala
 - Head-to-head: SonarQube, CodeQL, Snyk Code versus GPT-4.1, Mistral Large, DeepSeek V3
 
-Reported mean F1: LLMs 0.797 / 0.753 / 0.750; static tools 0.260 / 0.386 / 0.546. LLM advantage comes from recall. DeepSeek V3 has the highest false-positive ratio. All LLMs mislocate issues at line/column granularity due to tokenisation. Authors recommend a hybrid pipeline: LLM for early triage, deterministic scanners for high-assurance verification.
+Reported mean F1: LLMs 0.797 / 0.753 / 0.750; static tools 0.260 / 0.386 / 0.546. LLM advantage comes from recall. DeepSeek V3 has the highest false-positive ratio. All LLMs mislocate issues at line/column granularity due to tokenisation. The score-to-tool mapping is verified against Section V and Table XIII, not inferred from abstract ordering (claim D3-C01). Authors recommend a hybrid pipeline: LLM for early triage, deterministic scanners for high-assurance verification.
 
 **This is the baseline your system must beat, and the strongest argument for your architecture.** But treat the numbers carefully: 10 real-world C# projects, 63 vulnerabilities, single configuration, no variance reported. The direction is convincing; the magnitudes are not transferable. Note also that "mislocates at line/column granularity" is a direct hit on reproduction contracts. A finding attributed to the wrong line cannot ship a valid witness, so this paper predicts a real failure mode in your pipeline.
 

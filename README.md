@@ -15,6 +15,8 @@ This repository contains **analysis, metadata and citations only**. It does not 
 | [`corpus/out/04-provenance-and-licensing.md`](corpus/out/04-provenance-and-licensing.md) | Redistribution constraints and the evidence-status ledger |
 | [`corpus/out/05-absurdity-lane.md`](corpus/out/05-absurdity-lane.md) | Hypothesis-generation lane built on absurd-humor properties: operators, output contract, gates, metrics |
 | [`corpus/out/06-external-review-response.md`](corpus/out/06-external-review-response.md) | Response to external review: citation verification, triage, seven accepted specification deltas |
+| [`corpus/out/07-remediation-log.md`](corpus/out/07-remediation-log.md) | Response to a second review: ten findings triaged, schema and validators added, spec amended |
+| [`corpus/out/claims.json`](corpus/out/claims.json) | Claim-level manifest with locators, evidence class and permitted downstream uses |
 | [`adversarial-reviewer-corpus-audit.md`](adversarial-reviewer-corpus-audit.md) | Audit of an earlier proposed reading list; separates real sources from plausible-sounding ones |
 | [`paper-links-priority.md`](paper-links-priority.md) | The five verified sources with canonical records |
 
@@ -27,6 +29,19 @@ This repository contains **analysis, metadata and citations only**. It does not 
 | D3 | LLMs Versus Static Code Analysis Tools: A Systematic Benchmark | [arXiv:2508.04448](https://arxiv.org/abs/2508.04448) | Unreviewed preprint |
 | D4 | Outside the Comfort Zone | [arXiv:2408.16400](https://arxiv.org/abs/2408.16400) | Manuscript-asserted (ESORICS 2024) |
 | D5 | Vulnerability Detection and Repair: Literature Review | [arXiv:2404.02525](https://arxiv.org/abs/2404.02525) | Secondary source (TOSEM) |
+
+## Checks
+
+Metadata is enforced, not just documented. On every push and pull request, once `ci/validate.yml` is moved to `.github/workflows/` (GitHub requires the `workflow` OAuth scope to commit a workflow file; this grant carries `repo` only):
+
+```
+python tools/validate_corpus.py   # schema, provenance, evidence gate, licensing guard
+pytest -q                         # 24 tests, including negative tests that the schema rejects bad input
+```
+
+Both pass locally on this commit. `ci/validate.yml` holds the workflow definition.
+
+The gate that matters most: a claim may only be used as a `security_rule` if it is both verified against the source and carries a verified locator, and never if it is an interpretation or a derived inference. Ten claims are currently in the manifest; three are verified, seven are provisional and say so.
 
 ## Evidence classification
 

@@ -31,11 +31,11 @@ Retrieved artifacts are in `../`: `abs_*.html` (abstract pages), `html_*.html` (
 
 | ID | Short name | arXiv | Peer reviewed |
 |---|---|---|---|
-| D1 | SLR, detecting vulnerabilities with LLMs (263 studies) | 2507.22659 | Accepted TOSEM |
-| D2 | LLMs in Software Security survey | 2502.07049 | CSUR 58(5) |
+| D1 | SLR, detecting vulnerabilities with LLMs (263 studies) | 2507.22659 | Manuscript-asserted |
+| D2 | LLMs in Software Security survey | 2502.07049 | Secondary source |
 | D3 | LLMs versus static analysis benchmark | 2508.04448 | No, thesis preprint |
-| D4 | Outside the Comfort Zone | 2408.16400 | ESORICS 2024 |
-| D5 | Vulnerability detection and repair review | 2404.02525 | TOSEM |
+| D4 | Outside the Comfort Zone | 2408.16400 | Manuscript-asserted |
+| D5 | Vulnerability detection and repair review | 2404.02525 | Secondary source |
 
 ## The three findings that change the plan
 
