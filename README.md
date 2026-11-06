@@ -17,6 +17,7 @@ This repository contains **analysis, metadata and citations only**. It does not 
 | [`corpus/out/06-external-review-response.md`](corpus/out/06-external-review-response.md) | Response to external review: citation verification, triage, seven accepted specification deltas |
 | [`corpus/out/07-remediation-log.md`](corpus/out/07-remediation-log.md) | Response to a second review: ten findings triaged, schema and validators added, spec amended |
 | [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md) | Attack on the validators: six checks added, four blind spots admitted as tests |
+| [`corpus/out/09-oracle-and-pilot-defects.md`](corpus/out/09-oracle-and-pilot-defects.md) | What counts as an oracle, and the pilot the plan was missing |
 | [`corpus/out/claims.json`](corpus/out/claims.json) | Claim-level manifest with locators, evidence class and permitted downstream uses |
 | [`adversarial-reviewer-corpus-audit.md`](adversarial-reviewer-corpus-audit.md) | Audit of an earlier proposed reading list; separates real sources from plausible-sounding ones |
 | [`paper-links-priority.md`](paper-links-priority.md) | The five verified sources with canonical records |
@@ -55,7 +56,11 @@ The rule is stated in the standing instructions and repeated throughout: nothing
 
 The commit was made by an AI agent working on the maintainer's behalf, against a checked-out `main`. The maintainer is accountable for it, because authorising an agent to work in a repository is authorising its mistakes along with its work. The agent disclosed it in the same message that reported the result, which is the only part of this that went right.
 
-**What changed as a result.** Branch protection is now enabled on `main`: pull requests are required, the `validate` job must pass, force-pushes and branch deletion are blocked.
+**What changed as a result.** Branch protection is now enabled on `main`: pull requests are required, the required status check must pass, force-pushes and branch deletion are blocked.
+
+**That check is named `corpus`, not `validate`, and the difference is a trap.** `validate` is the workflow name in `.github/workflows/validate.yml`. `corpus` is the single job inside it. GitHub registers required status-check contexts by job name, so protection is configured against `corpus` while everything a reviewer sees in the Actions tab is labelled `validate`. Set the requirement to the workflow name and it matches no context, so it is never satisfied: merges stay blocked with a green tick on the pull request.
+
+The error message does not help. This repository's first blocked merge failed with `Required status check "corpus" is expected` while `corpus` had already passed twice on that commit. The actual cause was `strict: true` with the branch behind base, so the checks GitHub was waiting for belonged to a merge commit that did not exist yet. A message naming the check sent the investigation to the check. Recorded because the next person will read the same message.
 
 **The first attempt at that fix did not hold, and the failure is instructive.** Protection was enabled with `enforce_admins` off, and the next direct push succeeded anyway. GitHub said so plainly:
 
@@ -84,7 +89,7 @@ The joke did not produce a theory of software quality. It produced a worked demo
 | 2 | Sources listed as verified | Several named papers did not exist. Verification meant the identifier resolved, and for those it did not. |
 | 3 | `schema_version: "1.1"` | Nothing validated against it for the first three revisions. A version number with no validator is a comment. |
 | 4 | The CI gate | The workflow file sat outside `.github/`, and the dev requirements were excluded by a `*.txt` ignore rule. The first armed run failed before executing a single check. |
-| 5 | Branch protection requiring the `validate` check | Enabled with `enforce_admins` off. The next direct push succeeded, tagged `Bypassed rule violations`. |
+| 5 | Branch protection requiring the `corpus` status check | Enabled with `enforce_admins` off. The next direct push succeeded, tagged `Bypassed rule violations`. |
 
 Entries 4 and 5 share a cause worth naming: both controls were reported as working before anything had exercised them. The workflow was described as the gate while it was a file in the wrong directory; the protection was described as binding while the account making the pushes could step around it. Neither was a lie. Both were configuration mistaken for behaviour.
 

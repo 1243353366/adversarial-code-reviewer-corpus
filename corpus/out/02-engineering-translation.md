@@ -213,6 +213,29 @@ Two rules keep the loosening honest. First, each contract must be as hard to fab
 
 ---
 
+### S10. A pilot with pre-registration, before the matrix
+
+**Mechanism.** Not drawn from the corpus. This is a gap in the plan, named after D4 showed what the first run would otherwise measure.
+
+**Problem.** The path from "harness specified" to "publish the pairwise error-correlation matrix" has nothing in between. The first matrix computed on unverified labels measures label noise, and the project's own headline finding says so: D4 found an industrial oracle disagreeing with benchmark labels in both directions, which means a disagreement between two reviewers may be a disagreement about a wrong label rather than about the code `[E, D4]`. The metric would then be reported as correlated model error while measuring something else entirely.
+
+**Spec.** Before any full matrix:
+
+- One benchmark, 60 to 100 samples, not five benchmarks and not ten thousand. Small enough to adjudicate by hand, large enough for an interval that is not decorative.
+- Every sample carries at least two oracle verdicts with version and ruleset hash, plus an `adjudicated_by` record. S3 defines the fields; the pilot is where they get exercised for the first time.
+- Two reviewers, two distinct executable oracles. Not six personas.
+- Pre-register the analysis: the cells from S6, the intervals, the decision rule, and what result would count as failure. Written down before the numbers exist, for the reason in S4 (acceptance thresholds predate results) applied to the experiment itself.
+
+**Acceptance criteria.** Three, in order of importance:
+
+1. **Metric sanity.** The same-reviewer-duplicated control from S6 must approach correlation 1.0. If it does not, the metric is broken and no other number from the run is publishable.
+2. **Repeat-run spread.** Same configuration, repeated runs, must produce a spread narrower than the effect being claimed, or the effect is sampling noise.
+3. **Disagreement is reported per CWE, not aggregated.** A single correlation figure can hide a class where reviewers agree because both are blind to it.
+
+**Kill criterion.** If criterion 1 fails, the matrix comes down rather than gets annotated. A metric that cannot reproduce its own control cell is not a finding about models.
+
+**Limitations.** A pilot establishes that the instrument works. It establishes nothing about the population, and a passing pilot followed by a confident claim about one benchmark is the exact overreach this corpus documents in its sources. `[D]`
+
 ## Security and privacy implications
 
 - **Repository content is attacker-controlled.** None of these five documents addresses prompt injection through code comments, fixtures or manifests. This risk is real and specific to reviewing public repositories, but it is **not** supported by this corpus and must be treated as an unverified engineering concern. `[P]`

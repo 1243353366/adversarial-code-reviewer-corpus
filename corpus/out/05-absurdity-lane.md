@@ -91,11 +91,22 @@ Every operator emits a hypothesis record. There is no other output type.
   "incongruity": "what does not fit, stated concretely",
   "reframing": "the frame applied, if any",
   "falsification_test": "the executable check that settles it",
-  "oracle_binding": "semgrep-rule | unit-test | manual-review | none",
+  "oracle_binding": {
+    "kind": "static-analysis",
+    "oracle_id": "semgrep",
+    "oracle_version": "1.90.0",
+    "ruleset_hash": "sha256 of the rule bundle",
+    "verdict": "not_run"
+  },
+  "adjudication": "human review record, if any; not an oracle",
   "status": "hypothesis",
   "lane": "absurdity"
 }
 ```
+
+**`oracle_binding` was a pipe-delimited string in an earlier draft, and it was wrong twice.** A string that looks like an enum is not one: nothing validated it, so any value passed. It also listed `manual-review` as an oracle, which contradicts the rule at the top of this document and in the audit that only an *executable* oracle makes a finding checkable. Human review is adjudication, recorded separately. It is not repeatable from the artifact and cannot be re-derived later, so it cannot carry the weight of a verdict.
+
+`oracle_version` and `ruleset_hash` are required because a verdict without them is not reproducible. Rulesets change; a `confirmed` from last quarter may not be re-derivable this quarter, and a silently drifting oracle would corrupt exactly the pairwise correlation this project exists to measure. `verdict` is a closed enum: `not_run`, `confirmed`, `refuted`, `inconclusive`. `inconclusive` is not a soft finding, it is a counted non-result.
 
 **`status` is a closed enum with one legal value here.** Promotion past `hypothesis` requires the deterministic gate in S4: a reproducer, or an oracle verdict. The lane cannot self-promote, and cannot annotate severity, confidence or priority.
 

@@ -9,9 +9,6 @@ assert an attack succeeds, on purpose, so the blind spot is recorded in code rat
 discovered later by a reader who trusted the checks too much.
 """
 import copy
-import json
-
-import pytest
 
 from validate_corpus import (
     load,
