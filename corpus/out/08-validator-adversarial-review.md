@@ -12,11 +12,13 @@ The question asked was narrow and correct. Not "are the checks right" but "would
 
 Twenty mutations, each representing a move an adversary would make to ship a fabricated claim. Sixteen are now blocked by a named check. Four are not, and those four are committed as **passing** tests under `test_admits_*`, so the blind spot is asserted in code rather than described as a caveat.
 
+Two of the eighteen blocked cases were only found after the first version of the check failed on the runner and not locally, which is the recurring lesson of this repository: a check that has only ever run on the machine that wrote it has not run.
+
 Treating an admitted hole as a test rather than a note is the point. A caveat in prose rots; a test fails when someone closes the hole, which is the reminder to move it.
 
 ```bash
 $ pytest -q tests/test_validator_adversarial.py
-20 passed
+22 passed
 ```
 
 ---
@@ -36,7 +38,9 @@ Six of the thirteen checks now in `tools/validate_corpus.py` exist because a mut
 
 The last one is the finding worth dwelling on. The whole reason PR #3 and PR #4 exist is that a README claimed an acceptance status the provenance report denied. The fix was to correct that sentence. Nothing stopped the next sentence. A prose correction is a one-time repair, and the corpus had already demonstrated it does not hold.
 
-`status_language` now scans every tracked markdown file and requires that an assertive publication phrase carry its basis on the same line. It also handles negation, because its first version flagged the sentence "not a peer-reviewed publication" as a violation, which is the check being too stupid to be trusted rather than too weak.
+`status_language` now scans every tracked markdown file and requires that an assertive publication phrase carry its basis on the same line.
+
+It has since produced two false positives, both from quoting the thing it hunts. The first flagged the sentence "not a peer-reviewed publication"; the second flagged this document's own table, which quotes `Accepted at TOSEM` inside backticks as an example. Negation and code spans are now handled, and both cases are tests. A checker that cannot read a quotation is a checker people will disable.
 
 ---
 

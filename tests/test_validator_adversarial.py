@@ -204,3 +204,20 @@ def test_admits_trivially_true_claim_text():
     broken = copy.deepcopy(CLAIMS)
     broken["claims"][0]["claim_text"] = "The paper exists and contains words about the topic."
     assert schema_errors(broken, CLAIM_SCHEMA) == []
+
+
+def test_blocks_quoted_example_inside_backticks_is_allowed(tmp_path):
+    """The check has produced two false positives, both from quoting its own target."""
+    doc = tmp_path / "notes.md"
+    doc.write_text(
+        "| Mutation | Caught |\n"
+        "|---|---|\n"
+        "| `| D1 | ... | Accepted at TOSEM |` inserted into a README | No |\n"
+    )
+    assert check_status_language([str(doc)]) == []
+
+
+def test_blocks_fenced_block_is_allowed(tmp_path):
+    doc = tmp_path / "notes.md"
+    doc.write_text("```\nAccepted at TOSEM\n```\n")
+    assert check_status_language([str(doc)]) == []

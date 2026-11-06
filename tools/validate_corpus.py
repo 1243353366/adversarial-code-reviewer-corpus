@@ -175,8 +175,17 @@ def check_status_language(paths: list[str]) -> list[str]:
         path = Path(raw)
         if path.suffix.lower() != ".md" or not path.exists():
             continue
+        in_fence = False
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            low = line.lower()
+            stripped = line.strip()
+            if stripped.startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
+            # A quoted example inside backticks is documentation, not a claim. This check
+            # has now produced two false positives, both from quoting what it hunts.
+            low = re.sub(r"`[^`]*`", "", line).lower()
             hit = next((p for p in ASSERTIVE_STATUS if p in low), None)
             if not hit:
                 continue
