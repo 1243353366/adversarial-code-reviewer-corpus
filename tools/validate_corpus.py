@@ -18,7 +18,10 @@ METADATA_SCHEMA = ROOT / "schemas" / "research-metadata.schema.json"
 CLAIM_SCHEMA = ROOT / "schemas" / "claim.schema.json"
 
 ARXIV_IN_URL = re.compile(r"^https://arxiv\.org/abs/([0-9]{4}\.[0-9]{4,5})$")
-FORBIDDEN_BODY_SUFFIXES = (".pdf", ".txt", ".html", ".htm", ".epub", ".docx")
+# Document bodies are forbidden anywhere; plain-text and HTML are only forbidden
+# inside the corpus tree, so build files like requirements-dev.txt remain legal.
+FORBIDDEN_BODY_SUFFIXES = (".pdf", ".epub", ".docx")
+CORPUS_SCOPED_SUFFIXES = (".txt", ".html", ".htm")
 MAX_PUBLIC_ARTIFACT_BYTES = 512_000
 
 
@@ -100,7 +103,9 @@ def check_no_document_bodies(paths: list[str]) -> list[str]:
         path = Path(raw)
         if any(part in {"node_modules", ".git"} for part in path.parts):
             continue
-        if path.suffix.lower() in FORBIDDEN_BODY_SUFFIXES and not str(path).startswith("tests/"):
+        suffix = path.suffix.lower()
+        in_corpus = "corpus" in path.parts
+        if suffix in FORBIDDEN_BODY_SUFFIXES or (suffix in CORPUS_SCOPED_SUFFIXES and in_corpus):
             errors.append(f"document body tracked in repository: {path}")
         elif path.exists() and path.stat().st_size > MAX_PUBLIC_ARTIFACT_BYTES:
             errors.append(f"tracked file exceeds {MAX_PUBLIC_ARTIFACT_BYTES} bytes: {path}")

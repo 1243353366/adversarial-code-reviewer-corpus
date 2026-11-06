@@ -46,3 +46,13 @@ def test_tier_drift_is_caught():
 def test_nothing_is_publisher_confirmed():
     confirmed = META["corpus_level_observations"]["peer_review_tiers"]["publisher_confirmed"]
     assert confirmed == [], "no publisher record has been opened for any source"
+
+
+def test_licensing_guard_scopes_text_files_to_the_corpus_tree():
+    from validate_corpus import check_no_document_bodies
+
+    assert check_no_document_bodies(["corpus/txt_2508.04448.txt"])
+    assert check_no_document_bodies(["corpus/raw/paper.html"])
+    assert check_no_document_bodies(["docs/paper.pdf"])
+    assert check_no_document_bodies(["requirements-dev.txt"]) == []
+    assert check_no_document_bodies(["corpus/out/claims.json"]) == []
