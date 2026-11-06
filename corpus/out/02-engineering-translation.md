@@ -65,7 +65,7 @@ Component names used below correspond to the target system: **Corpora** (ingesti
 
 ---
 
-**Amendment (remediation).** The three-set comparison has a confound. A vulnerability moved across a function boundary may be harder to detect because it is harder to analyse, not because the original detection came from memory, so a recall drop cannot establish contamination by itself. Required additions: (a) an unchanged-code control scored by the same reviewer in the same run, separating mutation difficulty from corpus exposure; (b) a semantics-preserving transformation that does not move the vulnerability, separating presentation effects from cross-boundary effects; (c) an independent check that each mutant is behaviourally equivalent to its original, since a mutant that changes behaviour is a different program; (d) a separate mutation-difficulty measurement, such as tool or human success rate on the mutated set. Contamination is reported as a hypothesis supported by converging signals, never as a binary verdict. The 15-point threshold is a placeholder until calibrated against those controls; publishing it as a decision rule first would manufacture precision the experiment does not have.
+**Amendment (remediation).** The three-set comparison has a confound. A vulnerability moved across a function boundary may be harder to detect because it is harder to analyse, not because the original detection came from memory, so a recall drop cannot establish contamination by itself. Required additions: (a) an unchanged-code control scored by the same reviewer in the same run, separating mutation difficulty from corpus exposure; (b) a semantics-preserving transformation that does not move the vulnerability, separating presentation effects from cross-boundary effects; (c) an independent check that each mutant is behaviourally equivalent to its original, since a mutant that changes behavior is a different program; (d) a separate mutation-difficulty measurement, such as tool or human success rate on the mutated set. Contamination is reported as a hypothesis supported by converging signals, never as a binary verdict. The 15-point threshold is a placeholder until calibrated against those controls; publishing it as a decision rule first would manufacture precision the experiment does not have.
 
 ---
 ### S3. Label provenance with cross-oracle adjudication
@@ -97,6 +97,7 @@ Component names used below correspond to the target system: **Corpora** (ingesti
 **Acceptance criteria.**
 - Zero findings in the shipped stream without evidence matching its category, per the contract table below.
 - Fabrication rate, defined as shipped findings that a maintainer rejects as non-reproducing, reported with a Wilson 95% interval and kept below a stated threshold agreed before the first benchmark run, not after.
+- **Reported three ways, not one.** Post-gate fabrication rate alone is circular: the gate exists to remove fabrications, so a working gate drives the number toward zero and an empty output does the same. Every report carries the pre-gate rate, the post-gate rate, and the gate pass rate. A system that ships nothing has a perfect fabrication rate and no recall, and only the third number makes that visible.
 
 **Tests.** Canary set of deliberately plausible-but-false findings (see S5's stale-dependency class, which D3 supplies as a real example `[E]`); adjudicator blind test.
 **Limitations.** A deterministic tool cannot verify architecture, design or logic-class findings, so this gate suppresses a whole category of review output. That is a deliberate trade and should be stated in the product, not hidden. `[D]`
@@ -123,7 +124,7 @@ Two rules keep the loosening honest. First, each contract must be as hard to fab
 **Capability improved.** Trustworthiness of the most common false claim class in the benchmark.
 **Component.** CloudSentry.
 
-**Spec.** A dependency or staleness claim is a *lookup*, not a model judgement: resolve the version against an advisory database and the registry's current version at review time. The model may flag a candidate; only the lookup can assert it.
+**Spec.** A dependency or staleness claim is a *lookup*, not a model judgment: resolve the version against an advisory database and the registry's current version at review time. The model may flag a candidate; only the lookup can assert it.
 
 **Acceptance criteria.**
 - 100% of dependency claims carry a registry or advisory record locator and a timestamp.
@@ -143,12 +144,15 @@ Two rules keep the loosening honest. First, each contract must be as hard to fab
 **Capability improved.** Whether the ensemble is real or decorative.
 **Component.** Harness.
 
-**Spec.** For each reviewer pair, compute the phi coefficient over per-sample binary error vectors, stratified by CWE family (S7), with bootstrap intervals. Publish the matrix in the repository README, not an appendix.
+**Spec.** Each reviewer emits a verdict for **every** sample in the evaluated set, including `clean`. A reviewer that only reports what it suspects produces findings, not error vectors, and cannot enter the matrix at all. For each reviewer pair, compute the phi coefficient over those per-sample binary error vectors, stratified by CWE family (S7), with bootstrap intervals. Publish the matrix as its own artifact under `harness/results/`, linked from the README. The README is a summary and a governance record; research output living in it gets edited by people fixing prose.
+
+**Stratification has a floor.** A per-CWE phi needs positives and negatives in both margins. At pilot scale most strata have neither: with 14 CWE families, 100 samples and a 10% prevalence, 74% of strata hold under one expected positive, and at 60 samples it is 88% (computed here by simulation over a skewed family distribution, not taken from any source). So the stratification rule is a floor, not an aspiration: report a per-family phi only where the stratum holds at least 5 positive and 5 negative adjudicated samples; pool what remains into a family bucket and say which families were pooled; report the count of strata suppressed. A per-CWE matrix with silently undefined cells reports missing data as a number, which is the failure this corpus documents in its sources.
 
 **Acceptance criteria.**
 - Every reviewer pair reported, including high correlations.
 - Any pair above 0.8 is marked as a single effective reviewer and the ensemble size is restated accordingly.
 - Fabrication rate published alongside recall. Neither reported alone.
+- A no-skill floor is included: one reviewer that flags at random at the same base rate. Correlation against it bounds what "low correlation" can mean. Without the floor, a pair at 0.05 looks like diversity when it may be two reviewers measuring nothing.
 
 **Tests.** Sanity check by feeding the same reviewer twice under two prompts: correlation must approach 1.0, validating that the metric detects duplication.
 **Limitations.** Phi on imbalanced classes is unstable, which is why stratification matters. Error correlation also conflates shared blindness with shared knowledge; the metric bounds ensemble value without explaining it. `[D]`
@@ -219,14 +223,16 @@ Two rules keep the loosening honest. First, each contract must be as hard to fab
 
 **Problem.** The path from "harness specified" to "publish the pairwise error-correlation matrix" has nothing in between. The first matrix computed on unverified labels measures label noise, and the project's own headline finding says so: D4 found an industrial oracle disagreeing with benchmark labels in both directions, which means a disagreement between two reviewers may be a disagreement about a wrong label rather than about the code `[E, D4]`. The metric would then be reported as correlated model error while measuring something else entirely.
 
-**Spec.** Before any full matrix:
+**Spec.** Before any full matrix, in two stages. The stages exist because one number cannot do both jobs.
 
-- One benchmark, 60 to 100 samples, not five benchmarks and not ten thousand. Small enough to adjudicate by hand, large enough for an interval that is not decorative.
+**Stage 1, plumbing (60 to 100 samples, one CWE family or pooled).** Enough to adjudicate by hand and to prove the instrument works: every sample carries two oracle verdicts with identity, every reviewer emits a verdict for every sample, the floor reviewer is wired, the intervals compute. It is **not** enough for a per-CWE matrix, and S6's floor says so: 60 to 100 samples across 14 families leaves most strata with under one expected positive. A stage-1 run reports pooled figures and the count of strata it could not fill.
+
+**Stage 2, per-stratum claims (at least 5 positives and 5 negatives per reported family).** At a 10% prevalence that is a minimum of 100 adjudicated samples per family if the family is to carry a number, or a deliberate restriction to two or three families where the review actually operates. Either is defensible. Reporting fourteen families from a hundred samples is not.
 - Every sample carries at least two oracle verdicts with version and ruleset hash, plus an `adjudicated_by` record. S3 defines the fields; the pilot is where they get exercised for the first time.
 - Two reviewers, two distinct executable oracles. Not six personas.
 - Pre-register the analysis: the cells from S6, the intervals, the decision rule, and what result would count as failure. Written down before the numbers exist, for the reason in S4 (acceptance thresholds predate results) applied to the experiment itself.
 
-**Acceptance criteria.** Three, in order of importance:
+**Acceptance criteria.** Three, in order of importance, all evaluated at stage 1 where they are cheap:
 
 1. **Metric sanity.** The same-reviewer-duplicated control from S6 must approach correlation 1.0. If it does not, the metric is broken and no other number from the run is publishable.
 2. **Repeat-run spread.** Same configuration, repeated runs, must produce a spread narrower than the effect being claimed, or the effect is sampling noise.

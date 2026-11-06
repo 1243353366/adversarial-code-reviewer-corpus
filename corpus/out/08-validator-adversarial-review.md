@@ -25,7 +25,7 @@ $ pytest -q tests/test_validator_adversarial.py
 
 ## 2. Attacks that were not blocked, and the checks added because of them
 
-Six of the thirteen checks now in `tools/validate_corpus.py` exist because a mutation passed the first seven.
+Six of the fourteen checks now in `tools/validate_corpus.py` exist because a mutation passed the first seven.
 
 | Mutation | Was it caught? | Check added |
 |---|---|---|

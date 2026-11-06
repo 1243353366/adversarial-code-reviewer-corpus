@@ -2,7 +2,7 @@
 
 Response to a second external review, this one a conventional repository review covering correctness, consistency, data integrity, licensing and maintainability.
 
-The review's summary judgement was that the repository's documentation promises stronger evidence discipline than its tooling enforces. That is accurate, and it is the defect this commit addresses. Documentation now has machinery behind it.
+The review's summary judgment was that the repository's documentation promises stronger evidence discipline than its tooling enforces. That is accurate, and it is the defect this commit addresses. Documentation now has machinery behind it.
 
 ---
 

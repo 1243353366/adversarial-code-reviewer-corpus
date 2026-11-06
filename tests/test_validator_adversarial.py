@@ -22,6 +22,7 @@ from validate_corpus import (
     check_locator_resolution,
     check_peer_review_tiers,
     check_replication_claims,
+    check_status_fields,
     check_status_language,
 )
 
@@ -218,3 +219,21 @@ def test_blocks_fenced_block_is_allowed(tmp_path):
     doc = tmp_path / "notes.md"
     doc.write_text("```\nAccepted at TOSEM\n```\n")
     assert check_status_language([str(doc)]) == []
+
+
+def test_blocks_unqualified_claim_in_a_json_status_field():
+    """The markdown lint could not see these, and two of them asserted peer review
+    with the basis living in a different field."""
+    broken = copy.deepcopy(META)
+    broken["documents"][3]["peer_review_status"] = "peer reviewed, ESORICS 2024"
+    assert check_status_fields(broken)
+
+
+def test_blocks_tier_without_a_stated_basis():
+    broken = copy.deepcopy(META)
+    broken["documents"][1]["peer_review_status"] = "published in CSUR"
+    assert check_status_fields(broken)
+
+
+def test_blocks_clean_status_fields():
+    assert check_status_fields(META) == []
