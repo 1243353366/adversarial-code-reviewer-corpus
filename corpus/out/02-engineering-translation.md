@@ -65,6 +65,9 @@ Component names used below correspond to the target system: **Corpora** (ingesti
 
 ---
 
+**Amendment (remediation).** The three-set comparison has a confound. A vulnerability moved across a function boundary may be harder to detect because it is harder to analyse, not because the original detection came from memory, so a recall drop cannot establish contamination by itself. Required additions: (a) an unchanged-code control scored by the same reviewer in the same run, separating mutation difficulty from corpus exposure; (b) a semantics-preserving transformation that does not move the vulnerability, separating presentation effects from cross-boundary effects; (c) an independent check that each mutant is behaviourally equivalent to its original, since a mutant that changes behaviour is a different program; (d) a separate mutation-difficulty measurement, such as tool or human success rate on the mutated set. Contamination is reported as a hypothesis supported by converging signals, never as a binary verdict. The 15-point threshold is a placeholder until calibrated against those controls; publishing it as a decision rule first would manufacture precision the experiment does not have.
+
+---
 ### S3. Label provenance with cross-oracle adjudication
 
 **Mechanism.** An external static oracle disagreed with existing labels in both directions across five standard benchmarks `[E, D4]`.
@@ -92,7 +95,7 @@ Component names used below correspond to the target system: **Corpora** (ingesti
 **Spec.** Three claim classes with different bars. `refuted` (a deterministic tool or test contradicts it) never ships. `verified` (reproduced by an executable artifact) ships. `unverified_suspicion` ships only in an explicitly labelled internal stream and is never counted as a finding.
 
 **Acceptance criteria.**
-- Zero findings in the shipped stream without a reproduction artifact.
+- Zero findings in the shipped stream without evidence matching its category, per the contract table below.
 - Fabrication rate, defined as shipped findings that a maintainer rejects as non-reproducing, reported with a Wilson 95% interval and kept below a stated threshold agreed before the first benchmark run, not after.
 
 **Tests.** Canary set of deliberately plausible-but-false findings (see S5's stale-dependency class, which D3 supplies as a real example `[E]`); adjudicator blind test.
@@ -100,6 +103,20 @@ Component names used below correspond to the target system: **Corpora** (ingesti
 
 ---
 
+**Amendment (remediation).** The single reproduction bar was too strong. It is correct for exploitable vulnerabilities and wrong for the rest of the product's output, and a gate that cannot be met for architecture or logic findings does not raise quality, it deletes a category and calls the silence rigor. Evidence contracts by category:
+
+| Finding category | Acceptable evidence |
+|---|---|
+| Exploitable vulnerability | Reproducer or execution witness |
+| Static security defect | Analyzer witness (rule id plus matched path) or verified data-flow path |
+| Logic defect | Counterexample or failing property test |
+| Reliability | Fault-injection trace or failure log |
+| Architecture | Dependency or control-flow evidence naming the coupling |
+| Maintainability | Specific location plus the criterion violated |
+
+Two rules keep the loosening honest. First, each contract must be as hard to fabricate as a reproducer: an analyzer witness means a rule id and a matched path that a second party can re-run, not the analyzer's assertion. Second, `unverified_suspicion` remains a separate stream and is never counted in any metric that reports findings.
+
+---
 ### S5. Advisory resolution for dependency claims
 
 **Mechanism.** Models asserted that current package versions were outdated, and applied an outdated-dependency rule to a current package `[E, D3]`. Static tools do not make this error because their deprecation lists are maintained and updated `[E, D3]`.
@@ -117,6 +134,9 @@ Component names used below correspond to the target system: **Corpora** (ingesti
 
 ---
 
+**Amendment (remediation).** Three conditions were conflated and must be reported separately, each with its own evidence source and timestamp: `outdated` (installed version older than the latest release), `known_vulnerable` (installed version carries a published advisory), `unsupported` (installed version outside its maintenance window), and `unknown` where no source settles it. A current release can be vulnerable; an older release can be perfectly safe inside support. Version age is not evidence of vulnerability, and advisory presence is not evidence of current exposure.
+
+---
 ### S6. Error-correlation matrix and fabrication rate as primary metrics
 
 **Mechanism.** None of the five documents reports pairwise reviewer error correlation `[E]`; ensemble and voting approaches are documented without such measurement `[E, D1]`.
@@ -135,6 +155,9 @@ Component names used below correspond to the target system: **Corpora** (ingesti
 
 ---
 
+**Amendment (remediation).** Phi is undefined when either error vector has zero variance, which happens whenever a reviewer makes no errors on the evaluated set. That cell is reported as undefined, never computed as 0 or 1. Every pairwise figure carries the number of jointly evaluated items, a bootstrap confidence interval, the raw error-overlap count, and a per-class breakdown, because class balance and sample size both vary by stratum. The 0.8 alert threshold is an exploratory trigger for inspection, not a definition of independence, and must not be described as one in any report that quotes it.
+
+---
 ### S7. CWE-stratified reporting
 
 **Mechanism.** Long-tailed CWE distribution causes models to overfit frequent types and fail rare ones `[E, D1]`.
@@ -163,6 +186,9 @@ Component names used below correspond to the target system: **Corpora** (ingesti
 
 ---
 
+**Amendment (remediation).** Automatic clearance is withdrawn from the default policy. The corpus records that uncertainty signals are not calibrated for code review, which makes routing on them circular: an uncalibrated confidence measure would decide whether a human must inspect the conclusions that the same measure produced. Until calibration is demonstrated against a reliability curve on the harness, exactly two dispositions are supported: `human_review` and `quarantine`. `auto_clear` returns only when a published calibration study shows the abstention threshold holds on held-out code, and no repository is ever certified secure by this system. This binds hardest in CI/CD, where a wrong clearance ships a vulnerability.
+
+---
 ### S9. Structured reviewer rationale as reasoning ground truth
 
 **Mechanism.** Datasets rarely contain a verified root-cause chain, making LLM reasoning quality expensive to benchmark `[E, D1]`.

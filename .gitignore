@@ -3,3 +3,9 @@
 *.txt
 *.html
 api.xml
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+!requirements-dev.txt

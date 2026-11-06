@@ -90,6 +90,8 @@ Ten real-world C# projects with 63 embedded vulnerabilities spanning SQL injecti
 ### Results
 Mean F1, LLMs: GPT-4.1 0.797, Mistral Large 0.753, DeepSeek V3 0.750. Static: SonarQube 0.260, CodeQL 0.386, Snyk Code 0.546 `[E]`. The LLM advantage originates in recall `[E]`. DeepSeek V3 has the highest false-positive ratio `[E]`.
 
+**Locator (verified in remediation).** Section V, Analysis of Results, paragraph reporting Table XIII: the paper names the tool order explicitly, so the score-to-tool mapping is verified rather than inferred. See claim D3-C01 in `claims.json`.
+
 **Localization failure.** Against the SARIF `region` field, all three LLMs failed to report correct line and column. All correctly identified the file. The authors found no correlation among the errors and attribute them to BPE tokenisation `[E]`. They state this may preclude LLM use where precise location is required `[E]`.
 
 **Fabricated staleness.** A table of hallucinated findings where the models flag currently-current library versions as outdated, and in one case attach an outdated-dependency rule to a current package `[E]`.

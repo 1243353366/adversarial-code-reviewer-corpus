@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "2.0",
   "generated": "2026-11-06",
   "generated_by": "corpus acquisition run",
   "corpus_purpose": "Evidence base for the Adversarial Code Reviewer (multi-model code review with mutual refutation)",
@@ -64,9 +64,11 @@
         "Dataset-centric analysis: granularity, labelling, class imbalance, long-tail CWE distribution, data leakage"
       ],
       "reproducibility": {
+        "code_available": "not_stated",
+        "data_available": "not_stated",
+        "search_strings_reported": "yes",
         "protocol_reported": true,
-        "search_strings_reported": true,
-        "living_artifact_repo": true,
+        "living_artifact_repo": "yes",
         "independently_replicated": false
       },
       "confidence": {
@@ -76,7 +78,8 @@
       },
       "evidence_status": "not_independently_verified",
       "peer_review_tier": "manuscript_asserted",
-      "peer_review_tier_basis": "TOSEM acceptance stated in the manuscript header; placeholder DOI in body. No publisher record opened."
+      "peer_review_tier_basis": "TOSEM acceptance stated in the manuscript header; placeholder DOI in body. No publisher record opened.",
+      "confidence_level": "high"
     },
     {
       "doc_id": "D2",
@@ -92,15 +95,16 @@
       "publication_year": 2025,
       "document_type": "survey",
       "venue": "ACM Computing Surveys 58(5), November 2025",
-      "doi": "not_resolved",
-      "doi_status": "venue confirmed via multiple citing works; DOI not confirmed in this pass",
+      "doi": null,
+      "doi_status": "venue confirmed via multiple citing works; DOI not confirmed in this pass [raw value: not_resolved]",
       "arxiv_id": "2502.07049",
       "source_url": "https://arxiv.org/abs/2502.07049",
       "versions": [
         {
           "version": "v1",
           "date": "2025-02",
-          "note": "single version observed"
+          "note": "single version observed",
+          "date_precision": "month"
         }
       ],
       "license": "arXiv.org perpetual non-exclusive distribution license",
@@ -125,9 +129,11 @@
         "Named four-field challenge list including data leakage inflating metrics and positional bias in long contexts"
       ],
       "reproducibility": {
-        "protocol_reported": true,
+        "code_available": "not_stated",
+        "data_available": "not_stated",
         "search_strings_reported": "partially",
-        "living_artifact_repo": true,
+        "protocol_reported": true,
+        "living_artifact_repo": "yes",
         "independently_replicated": false
       },
       "confidence": {
@@ -137,7 +143,8 @@
       },
       "evidence_status": "not_independently_verified",
       "peer_review_tier": "secondary_source",
-      "peer_review_tier_basis": "CSUR 58(5) reported by multiple citing works. Publisher record not opened."
+      "peer_review_tier_basis": "CSUR 58(5) reported by multiple citing works. Publisher record not opened.",
+      "confidence_level": "high"
     },
     {
       "doc_id": "D3",
@@ -202,11 +209,17 @@
           "codeql": 0.386,
           "snyk_code": 0.546
         },
-        "mapping_note": "tool-to-score mapping inferred from the order in which tools are listed in the abstract; the paper's tables should be consulted before quoting an individual tool's score",
+        "mapping_note": "verified: the paper states the static-tool mapping explicitly in Section V (\"SonarQube, CodeQL, and SnykCode - achieved average F1 scores of 0.260, 0.386, and 0.546, respectively\") and the LLM mapping in the same sentence pair. Previously inferred from abstract ordering.",
         "llm_advantage_source": "recall",
         "false_positive_observation": "DeepSeek V3 exhibits the highest false-positive ratio",
         "localization_failure": "all three LLMs reported an incorrect line/column region in SARIF output; all correctly identified the file; authors found no correlation among the localization errors and attribute them to BPE tokenisation",
-        "latency": "CodeQL slowest of the static tools; attributed to loading and processing large predefined rule sets"
+        "latency": "CodeQL slowest of the static tools; attributed to loading and processing large predefined rule sets",
+        "mapping_status": "verified_against_source",
+        "mapping_locator": {
+          "section": "V Analysis of Results",
+          "table": "Table XIII",
+          "source_version": "v1"
+        }
       },
       "negative_results": [
         "LLM line/column localization failed universally, which the authors state may preclude LLM use where SARIF location is required",
@@ -219,9 +232,13 @@
         "single programming language and ecosystem"
       ],
       "reproducibility": {
-        "code_available": "authors state an open benchmark and JSON-based result harness were released; URL not verified in this pass",
-        "data_available": "stated",
-        "independently_replicated": false
+        "code_available": "yes",
+        "data_available": "not_stated",
+        "search_strings_reported": "not_stated",
+        "protocol_reported": false,
+        "living_artifact_repo": "not_stated",
+        "independently_replicated": false,
+        "notes": "authors state an open benchmark and JSON-based result harness were released; URL not verified in this pass"
       },
       "confidence": {
         "source_authenticity": "high",
@@ -230,7 +247,8 @@
       },
       "evidence_status": "not_independently_verified",
       "peer_review_tier": "unreviewed",
-      "peer_review_tier_basis": "Thesis preprint; no venue and no peer review."
+      "peer_review_tier_basis": "Thesis preprint; no venue and no peer review.",
+      "confidence_level": "high"
     },
     {
       "doc_id": "D4",
@@ -245,7 +263,7 @@
       "publication_year": 2024,
       "document_type": "peer_reviewed_conference_paper",
       "venue": "ESORICS 2024",
-      "doi": "not_resolved",
+      "doi": null,
       "arxiv_id": "2408.16400",
       "source_url": "https://arxiv.org/abs/2408.16400",
       "versions": [
@@ -300,9 +318,13 @@
       ],
       "security_implications_noted_by_authors": "training on mislabelled data functions analogously to data poisoning",
       "reproducibility": {
-        "code_available": "not confirmed",
-        "data_available": "authored dataset described; access not confirmed",
-        "independently_replicated": false
+        "code_available": "unconfirmed",
+        "data_available": "unconfirmed",
+        "search_strings_reported": "not_stated",
+        "protocol_reported": false,
+        "living_artifact_repo": "not_stated",
+        "independently_replicated": false,
+        "notes": "not confirmed"
       },
       "confidence": {
         "source_authenticity": "high",
@@ -311,7 +333,9 @@
       },
       "evidence_status": "not_independently_verified",
       "peer_review_tier": "manuscript_asserted",
-      "peer_review_tier_basis": "ESORICS 2024 acceptance stated in the arXiv comments field. No publisher record opened."
+      "peer_review_tier_basis": "ESORICS 2024 acceptance stated in the arXiv comments field. No publisher record opened.",
+      "confidence_level": "high",
+      "doi_status": " [raw value: not_resolved]"
     },
     {
       "doc_id": "D5",
@@ -325,7 +349,7 @@
       "publication_year": 2024,
       "document_type": "literature_review",
       "venue": "ACM Transactions on Software Engineering and Methodology (TOSEM), May 2025",
-      "doi": "not_resolved",
+      "doi": null,
       "arxiv_id": "2404.02525",
       "source_url": "https://arxiv.org/abs/2404.02525",
       "versions": [
@@ -373,9 +397,11 @@
         "L6 Lack of high accuracy and robustness"
       ],
       "reproducibility": {
-        "protocol_reported": true,
+        "code_available": "not_stated",
+        "data_available": "not_stated",
         "search_strings_reported": "partially",
-        "living_artifact_repo": "not stated",
+        "protocol_reported": true,
+        "living_artifact_repo": "not_stated",
         "independently_replicated": false
       },
       "confidence": {
@@ -390,7 +416,9 @@
       ],
       "retained_for": "detection/repair adaptation split; limitation taxonomy as a cross-check",
       "peer_review_tier": "secondary_source",
-      "peer_review_tier_basis": "TOSEM publication reported by citing works. Publisher record not opened."
+      "peer_review_tier_basis": "TOSEM publication reported by citing works. Publisher record not opened.",
+      "confidence_level": "high",
+      "doi_status": " [raw value: not_resolved]"
     }
   ],
   "corpus_level_observations": {
