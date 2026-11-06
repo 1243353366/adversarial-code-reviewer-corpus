@@ -34,7 +34,7 @@ Six of the thirteen checks now in `tools/validate_corpus.py` exist because a mut
 | A non-permissive source added to the redistributable list | **No** | `license_consistency` |
 | An `unavailable` locator relabelled `verified` while still `"unresolved"` | **No** | `locator_resolution` |
 | `verified: true` added to a document record | **No** | `extension_keys` |
-| `\| D1 \| ... \| Accepted at TOSEM \|` inserted into a markdown file | **No** | `status_language` |
+| A table row asserting `Accepted at TOSEM` for D1, added to a README | **No** | `status_language` |
 
 The last one is the finding worth dwelling on. The whole reason PR #3 and PR #4 exist is that a README claimed an acceptance status the provenance report denied. The fix was to correct that sentence. Nothing stopped the next sentence. A prose correction is a one-time repair, and the corpus had already demonstrated it does not hold.
 
