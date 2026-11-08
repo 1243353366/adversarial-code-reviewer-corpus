@@ -46,8 +46,8 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 ```
 python tools/validate_corpus.py   # 17 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 120 tests: validators, attacks, hostile peers, deception
-python tools/repro.py --check     # 35 defects: each reproduces on its historical state, then stays caught
+pytest -q                         # 145 tests: validators, attacks, hostile peers, deception
+python tools/repro.py --check     # 41 defects: each reproduces on its historical state, then stays caught
 ```
 
 Sixteen checks, not four. The later ones were added by attacking the validators themselves: six of them exist because a mutation got through the first version. The four mutations that still get through are written as passing tests, so the limits are visible in code rather than discovered in an incident. See [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md).

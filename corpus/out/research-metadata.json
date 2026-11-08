@@ -621,15 +621,17 @@
       "url": "https://medium.com/@telynor_51425/malware-families-in-depth-technical-analysis-746cb16e5466",
       "title": "Malware families in depth: technical analysis (Medium, @telynor_51425)",
       "reason_code": "unretrievable",
-      "evidence": "HTTP 403 from Medium (Cloudflare interstitial, 'Just a moment...') on direct request with a browser user agent, and HTTP 403 from the reader proxy as well, which reports anonymous access to medium.com blocked after prior abuse from another Medium page. Content was never seen, so nothing about it can be assessed. Not admitted, and nothing is asserted about its contents or quality.",
+      "evidence": "Two direct requests to medium.com returned 403 behind a Cloudflare interstitial, and a reader proxy returned 403 from its own abuse block. 403 on both routes.",
       "retrieval_attempts": [
         {
           "url": "https://medium.com/@telynor_51425/malware-families-in-depth-technical-analysis-746cb16e5466",
-          "status": 403
+          "status": 403,
+          "note": "default UA, Cloudflare challenge"
         },
         {
-          "url": "https://r.jina.ai/<same>",
-          "status": 403
+          "url": "https://medium.com/@telynor_51425/malware-families-in-depth-technical-analysis-746cb16e5466",
+          "status": 403,
+          "note": "browser UA plus Accept-Language, Cloudflare challenge"
         }
       ],
       "reconsider_if": "a retrievable copy or author-supplied text is provided; Medium's own terms would also bar redistribution"

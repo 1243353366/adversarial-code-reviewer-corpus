@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+from urllib.parse import urlsplit
 import subprocess
 import sys
 from pathlib import Path
@@ -45,6 +46,37 @@ def schema_errors(instance, schema: dict) -> list[str]:
     return out
 
 
+def url_structure_error(url: str) -> str | None:
+    """A prefix check is not a URL check: https:// alone passes startswith."""
+    if not isinstance(url, str) or not url:
+        return f"source_url missing: {url!r}"
+    parts = urlsplit(url)
+    if parts.scheme != "https":
+        return f"source_url is not https: {url!r}"
+    host = parts.hostname or ""
+    if not host:
+        return f"source_url has no hostname: {url!r}"
+    if "." not in host and host != "localhost":
+        return f"source_url host {host!r} is not a registrable name"
+    if parts.username or parts.password:
+        return "source_url embeds credentials"
+    if any(c.isspace() for c in url):
+        return f"source_url contains whitespace: {url!r}"
+    return None
+
+
+def retrieval_identity(url: str) -> tuple[str, str]:
+    """What a retrieval must share with the document it claims to come from."""
+    parts = urlsplit(url)
+    host = (parts.hostname or "").lower().removeprefix("www.")
+    arxiv = ""
+    m = re.search(r"(\d{4}\.\d{4,5})", parts.path or "")
+    if m and "arxiv" in host:
+        arxiv = m.group(1)
+    return host, arxiv
+
+
+
 def check_unique_doc_ids(meta: dict) -> list[str]:
     seen, dupes = set(), set()
     for doc in meta.get("documents", []):
@@ -72,8 +104,9 @@ def check_arxiv_url_consistency(meta: dict) -> list[str]:
         else:
             # non-arXiv sources must still resolve to a real https URL, and must not
             # masquerade as arXiv records
-            if not url.startswith("https://"):
-                errors.append(f"{did}: source_url must be https: {url!r}")
+            problem = url_structure_error(url)
+            if problem:
+                errors.append(f"{did}: {problem}")
             if "arxiv.org" in url:
                 errors.append(f"{did}: source_url points at arXiv but arxiv_id is null")
     return errors
@@ -425,14 +458,38 @@ def check_rejected_sources(meta: dict) -> list[str]:
         seen.add(sid)
         if r.get("reason_code") not in REJECT_REASONS:
             errors.append(f"{sid}: unknown rejection reason {r.get('reason_code')!r}")
-        if not r.get("retrieval_attempts"):
+        attempts = r.get("retrieval_attempts") or []
+        if not attempts:
             errors.append(f"{sid}: rejected with no retrieval attempt recorded, so the rejection is unevidenced")
-        if len(r.get("evidence", "")) < 40:
+        statuses = []
+        for attempt in attempts:
+            status = attempt.get("status")
+            if not isinstance(status, int) or not 100 <= status <= 599:
+                errors.append(f"{sid}: attempt status {status!r} is not an HTTP status")
+            else:
+                statuses.append(status)
+            if url_structure_error(attempt.get("url", "")):
+                errors.append(f"{sid}: attempt url {attempt.get('url')!r} is not a valid URL")
+            elif retrieval_identity(attempt.get("url", ""))[0] != retrieval_identity(r.get("url", ""))[0]:
+                errors.append(
+                    f"{sid}: attempt url {attempt.get('url')!r} does not point at the rejected source"
+                )
+        evidence = r.get("evidence", "") or ""
+        if len(evidence) < 80:
             errors.append(f"{sid}: rejection evidence is too thin to check")
+        if statuses and not any(str(s) in evidence for s in statuses):
+            errors.append(
+                f"{sid}: evidence does not mention any recorded status "
+                f"{statuses}, so it does not describe these attempts"
+            )
+        if r.get("reason_code") == "unretrievable" and not any(s >= 400 for s in statuses):
+            errors.append(f"{sid}: rejected as unretrievable but no attempt failed")
+        if r.get("reason_code") == "provenance_unestablished" and not any(s < 400 for s in statuses):
+            errors.append(f"{sid}: provenance judged from content that was never retrieved")
     return errors
 
 
-def check_locator_witness(claims_doc: dict, retrievals: dict) -> list[str]:
+def check_locator_witness(claims_doc: dict, retrievals: dict, meta: dict | None = None) -> list[str]:
     """A verified locator needs a verbatim witness, not just a plausible section number.
 
     An invented section slides past every existence check; a quote with an offset and an
@@ -463,10 +520,31 @@ def check_locator_witness(claims_doc: dict, retrievals: dict) -> list[str]:
         if not isinstance(witness.get("offset"), int) or witness["offset"] < 0:
             errors.append(f"{cid}: witness offset missing or negative")
         rid = witness.get("retrieval_id")
+        docs_by_id = {d.get("doc_id"): d for d in (meta or {}).get("documents", [])}
         if rid not in known:
             errors.append(f"{cid}: witness cites unknown retrieval {rid!r}")
-        elif not known[rid].get("artifact_sha256"):
-            errors.append(f"{cid}: retrieval {rid!r} records no artifact hash")
+        else:
+            record = known[rid]
+            owner = record.get("document_id")
+            if owner != claim.get("document_id"):
+                errors.append(
+                    f"{cid}: retrieval {rid!r} belongs to {owner!r}, not to the claiming "
+                    f"document {claim.get('document_id')!r}"
+                )
+            doc = docs_by_id.get(claim.get("document_id"), {})
+            if owner == claim.get("document_id") and doc:
+                host, arxiv = retrieval_identity(record.get("url", ""))
+                doc_host, doc_arxiv = retrieval_identity(doc.get("source_url", ""))
+                if host != doc_host:
+                    errors.append(
+                        f"{cid}: retrieval host {host!r} does not match the document's {doc_host!r}"
+                    )
+                elif arxiv and doc_arxiv and arxiv != doc_arxiv:
+                    errors.append(
+                        f"{cid}: retrieval identifies {arxiv} but the document is {doc_arxiv}"
+                    )
+            if not record.get("artifact_sha256"):
+                errors.append(f"{cid}: retrieval {rid!r} records no artifact hash")
         claim_text = (claim.get("claim_text") or "").lower()
         if quote and quote.lower() in claim_text:
             errors.append(f"{cid}: witness quote restates the claim instead of the source")
@@ -505,11 +583,17 @@ def validate_all(root: Path = ROOT) -> dict[str, list[str]]:
     report["extension_keys"] = check_extension_keys(meta)
     report["licence_scope"] = check_licence_scope(tracked)
     report["rejected_sources"] = check_rejected_sources(meta)
-    report["locator_witness"] = check_locator_witness(
-        claims_doc, load(root / "harness/retrievals/D3.json") if (root / "harness/retrievals/D3.json").exists() else {}
-    )
-    report["status_fields"] = check_status_fields(meta)
+    manifest_dir = root / "harness/retrievals"
+    merged: dict = {"retrievals": {}}
+    duplicate_ids: list[str] = []
+    for path in sorted(manifest_dir.glob("*.json")):
+        for rid, record in (load(path).get("retrievals") or {}).items():
+            if rid in merged["retrievals"]:
+                duplicate_ids.append(f"duplicate retrieval id {rid!r} in {path.name}")
+            merged["retrievals"][rid] = record
     report["status_language"] = check_status_language(tracked)
+    report["status_fields"] = check_status_fields(meta)
+    report["locator_witness"] = check_locator_witness(claims_doc, merged, meta) + duplicate_ids
     return report
 
 
