@@ -295,6 +295,67 @@ def r_spelling_drift(state: dict) -> list[str]:
     return list(state["hits"])
 
 
+# --- hostile peer defects -------------------------------------------------------
+
+sys.path.insert(0, str(ROOT))  # the harness package lives at the repo root
+from harness.untrusted_peer import protocol as UP  # noqa: E402
+from harness.untrusted_peer.audit import attack as _attack  # noqa: E402
+from harness.untrusted_peer.hardened import HardenedListener as _Hard  # noqa: E402
+from harness.untrusted_peer.naive import NaiveListener as _Naive  # noqa: E402
+from harness.untrusted_peer.peer import ScriptedPeer as _Peer  # noqa: E402
+
+_GOOD = {"type": "observation", "seq": 1, "note": "ok"}
+
+
+def _peer_guard(kind: str, expected: str | None = None, neutralized=None):
+    """historical = the naive listener, current = the hardened one.
+
+    The check receives a listener and runs one hostile peer against it. Errors mean the
+    listener failed to defend, which is exactly what the historical state must show and
+    the current state must not.
+    """
+    def check(listener):
+        from harness.untrusted_peer.audit import _script_for  # local to avoid a cycle
+        now = {"t": 0.0}
+        clock = lambda: now["t"]  # noqa: E731
+        if kind == "slow_trickle":
+            class Trickle(_Peer):
+                def read_exact(self, n, deadline=None):
+                    now["t"] += 3.0
+                    return super().read_exact(n, deadline)
+            peer = Trickle(_script_for(kind), clock=clock, timeout_after=1.0)
+        else:
+            peer = _Peer(_script_for(kind), clock=clock, timeout_after=1.0)
+        try:
+            msg = listener.read_one(peer)
+            outcome = ("accepted", msg)
+        except Exception as exc:
+            outcome = (type(exc).__name__, exc)
+
+        defended = False
+        if expected is not None and outcome[0] == "ProtocolError" and expected in str(outcome[1]):
+            defended = True
+        if neutralized is not None and outcome[0] == "accepted" and neutralized(outcome[1]):
+            defended = True
+
+        if isinstance(listener, _Hard):
+            return [] if defended else [f"hardened listener accepted the hostile frame ({outcome[0]})"]
+        # Non-empty here means "the defect reproduced", which is what the historical
+        # side of the pair is required to show.
+        if defended:
+            return ["naive listener defended itself, so nothing reproduces"]
+        return [f"defect reproduced: {outcome[0]} with no defense in place"]
+    return check
+
+
+def _naive():
+    return _Naive(log=lambda _: None)
+
+
+def _hard():
+    return _Hard(clock=lambda: 0.0)  # replaced per-call for trickle in _peer_guard
+
+
 def _write_tmp(text: str) -> str:
     tmp = Path(tempfile.mkdtemp()) / "injected.md"
     tmp.write_text(text + "\n")
@@ -496,6 +557,24 @@ REGISTRY: list[Repro] = [
           r_live_protection,
           _live_historical,
           _live_current),
+    Repro("R24", "peer's declared frame length is allocated before it is read",
+          "a 4-byte header claiming 2 GB",
+          _peer_guard("declared_length", expected="frame_too_large"), _naive, _hard),
+    Repro("R25", "malformed bytes from the peer kill the receiving loop",
+          "invalid UTF-8 inside a well-formed frame",
+          _peer_guard("malformed_bytes", expected="not_utf8"), _naive, _hard),
+    Repro("R26", "the peer's own claim to a privileged role is believed",
+          "a frame carrying role=operator",
+          _peer_guard("forged_role", neutralized=lambda m: m["role"] == "peer"), _naive, _hard),
+    Repro("R27", "peer text is written to the log without sanitizing",
+          "an ANSI clear-screen plus a forged log line",
+          _peer_guard("log_injection", neutralized=lambda m: "\x1b" not in m["note"]), _naive, _hard),
+    Repro("R28", "an unrecognized field is accepted and carried into logic",
+          "a frame carrying cmd=shutdown",
+          _peer_guard("unknown_field", expected="unknown_field"), _naive, _hard),
+    Repro("R29", "nothing bounds how long a peer may take to send one frame",
+          "a trickle costing three seconds per read",
+          _peer_guard("slow_trickle", expected="deadline_exceeded"), _naive, _hard),
 ]
 
 
