@@ -25,6 +25,9 @@ jobs:
       - name: failure intelligence is internally consistent
         run: python tools/failure_intelligence.py --check
 
+      - name: behavioural witness runs its own scenarios
+        run: python tools/behavioral_witness.py > /dev/null
+
       - name: classifier scores against the labelled benchmark
         run: python tools/failure_classifier.py --eval
 

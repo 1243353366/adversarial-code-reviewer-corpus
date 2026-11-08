@@ -51,11 +51,13 @@ import failure_intelligence as fi  # noqa: E402
 
 COMPONENTS = ("product", "analyzer", "test", "policy", "infrastructure")
 MODES = ("false_positive", "false_negative", "missing_coverage", "incorrect_oracle",
-         "invalid_configuration", "execution_failure", "specification_ambiguity", "unverified_claim")
+         "invalid_configuration", "execution_failure", "specification_ambiguity", "unverified_claim",
+         "invariant_violation")
 MECHANISMS = ("semantic_model_error", "control_flow_reasoning_error", "incomplete_data_flow",
               "scope_confinement_error", "suppression_granularity_error", "availability_error",
               "threshold_decentralization", "coverage_of_pattern_error", "site_mismatch",
-              "oracle_error", "unreproducible_claim")
+              "oracle_error", "unreproducible_claim", "bound_not_enforced",
+              "boundary_condition_error", "symptom_masking", "quota_exhaustion_masked_as_a_bound")
 CONFIDENCES = ("supported", "probable", "insufficient_evidence")
 
 # The closed evidence vocabulary. Each code is a checkable fact about the failure, and the
@@ -78,6 +80,8 @@ EVIDENCE_CODES = {
     "analyzer_guard_model": "the defect is in how the analyzer reads a rejecting guard",
     "analyzer_scope_model": "the defect is in which scope a fact is attributed to",
     "analyzer_propagation_model": "the defect is in how far a fact is propagated",
+    "observed_bound_not_enforced": "a run showed a peer-chosen size reach the operation above the limit",
+    "observed_boundary_off_by_one": "a run showed the boundary value itself accepted",
 }
 
 
@@ -118,6 +122,10 @@ RULES = (
          "policy", "specification_ambiguity", "threshold_decentralization", "nist_sp800_231"),
     Rule("claim that will not reproduce", frozenset({"claim_unreproducible"}),
          "analyzer", "unverified_claim", "unreproducible_claim", "fse_2024"),
+    Rule("size above the limit reached the operation", frozenset({"observed_bound_not_enforced"}),
+         "product", "invariant_violation", "bound_not_enforced", "cwe"),
+    Rule("boundary value accepted", frozenset({"observed_boundary_off_by_one"}),
+         "product", "invariant_violation", "boundary_condition_error", "cwe"),
 )
 
 

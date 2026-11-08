@@ -1,4 +1,6 @@
-# Adversarial Code Reviewer: research corpus
+# Assay
+
+*Adversarial code review with witnesses.* Nothing here is accepted because someone said so.
 
 Evidence base for a multi-model code reviewer in which reviewers must refute each other's findings with reproducible artifacts rather than vote on them.
 
@@ -46,7 +48,7 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 ```
 python tools/validate_corpus.py   # 17 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 286 tests: validators, attacks, hostile peers, deception
+pytest -q                         # 302 tests: validators, attacks, hostile peers, deception
 python tools/repro.py --check     # 58 defects: each reproduces on its historical state, then stays caught
 ```
 
