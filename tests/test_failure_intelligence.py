@@ -88,7 +88,7 @@ def test_sarif_output_is_consumable_by_code_scanning():
     sarif = json.loads(fi.to_sarif(findings))
     assert sarif["version"] == "2.1.0"
     run = sarif["runs"][0]
-    assert run["tool"]["driver"]["name"].startswith("adversarial-code-reviewer-corpus")
+    assert run["tool"]["driver"]["name"].startswith("assay")
     assert len(run["results"]) == len(findings)
     first = run["results"][0]
     assert first["ruleId"] in {r["id"] for r in run["tool"]["driver"]["rules"]}

@@ -210,9 +210,9 @@ def to_sarif(findings: list[Finding]) -> str:
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "runs": [{
             "tool": {"driver": {
-                "name": "adversarial-code-reviewer-corpus failure intelligence",
+                "name": "assay failure intelligence",
                 "version": "1.0.0",
-                "informationUri": "https://github.com/1243353366/adversarial-code-reviewer-corpus",
+                "informationUri": "https://github.com/1243353366/assay",
                 "rules": list(rules.values()),
             }},
             "results": results,

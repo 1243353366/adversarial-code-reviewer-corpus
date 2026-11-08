@@ -76,7 +76,7 @@ def fetch_live(repo: str, branch: str, token: str | None, opener=None) -> dict:
         headers={
             "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github+json",
-            "User-Agent": "adversarial-code-reviewer-corpus",
+            "User-Agent": "assay",
         },
     )
     open_fn = opener or urllib.request.urlopen
