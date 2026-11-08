@@ -596,6 +596,69 @@ def _r18_state(text: str) -> list[str]:
     return [] if "(`licence`/`license`," in text else ["the R18 record no longer names two spellings"]
 
 
+
+def _prov(kind: str):
+    """Provenance-confusion pairs: naive listener versus guarded listener."""
+
+    def check(naive: bool):
+        from harness.provenance import INTERNAL, internal_capability  # noqa: E402
+        from harness.provenance.listener import GuardedListener, NaiveListener  # noqa: E402
+
+        if kind == "claimed_origin":
+            lst = NaiveListener() if naive else GuardedListener()
+            lst.transport_in({"id": "1", "origin": INTERNAL})
+            res = lst.run()
+            believed = res.events and res.events[0][0] == INTERNAL
+            if naive:
+                return ["defect reproduced: the peer's stated origin was adopted"] if believed else []
+            return [] if believed is False and res.rejected else ["the body still decided provenance"]
+
+        if kind == "feedback":
+            lst = NaiveListener(capacity=200) if naive else GuardedListener(capacity=200)
+            lst.transport_in({"id": "loop"})
+            res = lst.run()
+            if naive:
+                return ["defect reproduced: %d passes for one input" % res.processed] if res.processed > 100 else []
+            return [] if res.processed <= 2 and "hop_limit" in res.rejected else ["the loop still runs"]
+
+        if kind == "uncapped_internal":
+            lst = NaiveListener() if naive else GuardedListener()
+            if naive:
+                lst.internal_in({"id": "2"})
+            else:
+                lst.internal_in({"id": "2"}, cap=None)
+            res = lst.run() if naive else lst.result
+            if naive:
+                return ["defect reproduced: internal enqueue accepted with no capability"] if res.processed else []
+            return [] if "internal_enqueue_without_capability" in res.rejected else ["capability was optional"]
+
+        if kind == "ancestry":
+            import harness.provenance as P  # noqa: E402
+            if naive:
+                lst = NaiveListener()
+                lst.transport_in({"id": "a"})
+                res = lst.run()
+                return ["defect reproduced: a message already in its own ancestry was processed"] if res.processed else []
+            lst = GuardedListener()
+            lst._enqueue(P.Envelope(msg={"id": "a"}, origin=P.REMOTE, conn_id="c", ancestry=("a",)))
+            res = lst.run()
+            return [] if "ancestry_cycle" in res.rejected else ["the cycle was accepted"]
+
+        if kind == "capacity":
+            lst = NaiveListener(capacity=2) if naive else GuardedListener(capacity=2)
+            for i in range(6):
+                lst.transport_in({"id": str(i)})
+            res = lst.run() if naive else lst.result
+            if naive:
+                return (["defect reproduced: 6 messages entered a 2-slot queue and no drop was counted"]
+                        if res.suppressed == 0 else ["drops were counted, so nothing reproduces"])
+            return [] if res.suppressed > 0 else ["drops are still silent"]
+
+        raise AssertionError(kind)
+
+    return check
+
+
 REGISTRY: list[Repro] = [
     Repro("R01", "D3 acceptance status asserted without its basis",
           "a README line claiming TOSEM acceptance",
@@ -776,6 +839,16 @@ REGISTRY: list[Repro] = [
           _r18_state,
           lambda: "| R18 | one concept spelled two ways (`license`/`license`) | x |",
           lambda: (ROOT / "CHANGELOG.md").read_text()),
+    Repro("R42", "a remote peer could state its own origin and be believed",
+          "a first message carrying origin=internal", _prov("claimed_origin"), _naive_flag, _hardened_flag),
+    Repro("R43", "every reply re-entered the input queue, so one message amplified",
+          "one message through a listener that answers", _prov("feedback"), _naive_flag, _hardened_flag),
+    Repro("R44", "internal enqueueing needed no capability, so anything could self-inject",
+          "an internal enqueue with no capability object", _prov("uncapped_internal"), _naive_flag, _hardened_flag),
+    Repro("R45", "a message already in its own ancestry was processed again",
+          "an envelope whose id is in its own ancestry", _prov("ancestry"), _naive_flag, _hardened_flag),
+    Repro("R46", "queue overflow dropped messages with no count, so loss was invisible",
+          "six messages into a two-slot queue", _prov("capacity"), _naive_flag, _hardened_flag),
 ]
 
 
