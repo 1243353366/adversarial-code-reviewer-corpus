@@ -22,6 +22,11 @@ jobs:
       - name: sinkhole answers a scripted intrusion
         run: python harness/deception/hellbox.py > /dev/null
 
+      - name: mirror measurement and infrastructure report
+        run: |
+          python harness/deception/mirror.py > /dev/null
+          python harness/deception/aws_intel.py > /dev/null
+
       - name: Tests
         run: pytest -q
 
