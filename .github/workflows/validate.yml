@@ -17,5 +17,7 @@ jobs:
         run: pip install -r requirements-dev.txt
       - name: Validate corpus (schema, provenance, licensing guard)
         run: python tools/validate_corpus.py
+      - name: Review our own code with the catalogue's rules
+        run: python tools/self_review.py
       - name: Tests
         run: pytest -q
