@@ -202,6 +202,80 @@
         "hypothesis_seed"
       ],
       "notes": "Recorded as author interpretation, not as a measured result."
+    },
+    {
+      "claim_id": "D7-C01",
+      "document_id": "D7",
+      "source_version": "v1",
+      "claim_text": "1.3 billion malware specimens were reported as known, which is the stated reason for using machine-learning analysis.",
+      "evidence_type": "source_asserted_claim",
+      "verification_status": "verified_against_source",
+      "replication_status": "none",
+      "locator": {
+        "section": "Introduction, opening paragraph",
+        "witness": {
+          "quote": "As of last year, researchers reported 1.3 billion known malware specimens, motivating the use of data-driven machine learning (ML) methods for analysis.",
+          "offset": 627,
+          "length": 152,
+          "retrieval_id": "D7-2026-11-08-pdf"
+        }
+      },
+      "locator_status": "verified",
+      "permitted_downstream_uses": [
+        "citation_only",
+        "design_input",
+        "hypothesis_seed"
+      ],
+      "notes": "Quoted verbatim from the retrieved PDF; offset is into whitespace-normalized text of retrieval D7-2026-11-08-pdf."
+    },
+    {
+      "claim_id": "D7-C02",
+      "document_id": "D7",
+      "source_version": "v1",
+      "claim_text": "The authors report stable performance on rare and novel family classification under class imbalance, bought with a higher abstention rate.",
+      "evidence_type": "source_asserted_result",
+      "verification_status": "verified_against_source",
+      "replication_status": "none",
+      "locator": {
+        "section": "Introduction, contribution statement",
+        "witness": {
+          "quote": "We demonstrate stable task performance under class imbalance for the following tasks: malware family classification and novel malware detection with a trade-off in increased abstention or reject-option rate.",
+          "offset": 1192,
+          "length": 207,
+          "retrieval_id": "D7-2026-11-08-pdf"
+        }
+      },
+      "locator_status": "verified",
+      "permitted_downstream_uses": [
+        "citation_only",
+        "design_input",
+        "hypothesis_seed"
+      ],
+      "notes": "Quoted verbatim from the retrieved PDF; offset is into whitespace-normalized text of retrieval D7-2026-11-08-pdf."
+    },
+    {
+      "claim_id": "D7-C03",
+      "document_id": "D7",
+      "source_version": "v1",
+      "claim_text": "The authors' own reading is that ensemble voting is the best confidence metric for their imbalance problem.",
+      "evidence_type": "author_interpretation",
+      "verification_status": "verified_against_source",
+      "replication_status": "none",
+      "locator": {
+        "section": "Results, confidence metric discussion",
+        "witness": {
+          "quote": "Therefore, we believe that Ensemble Voting is an ideal confidence metric for handling the class imbalance problem.",
+          "offset": 26008,
+          "length": 114,
+          "retrieval_id": "D7-2026-11-08-pdf"
+        }
+      },
+      "locator_status": "verified",
+      "permitted_downstream_uses": [
+        "citation_only",
+        "hypothesis_seed"
+      ],
+      "notes": "Quoted verbatim from the retrieved PDF; offset is into whitespace-normalized text of retrieval D7-2026-11-08-pdf."
     }
   ]
 }

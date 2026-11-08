@@ -76,6 +76,73 @@
           "type": "object"
         }
       }
+    },
+    "rejected_sources": {
+      "type": "array",
+      "description": "Sources examined and refused, with the reason and the evidence for it.",
+      "items": {
+        "type": "object",
+        "required": [
+          "source_id",
+          "url",
+          "reason_code",
+          "evidence",
+          "retrieval_attempts"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "pattern": "^RS[0-9]+$"
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https://"
+          },
+          "title": {
+            "type": "string"
+          },
+          "reason_code": {
+            "enum": [
+              "provenance_unestablished",
+              "unretrievable",
+              "licence_forbids",
+              "duplicate",
+              "out_of_scope",
+              "superseded"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 40
+          },
+          "retrieval_attempts": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "url",
+                "status"
+              ],
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "integer"
+                },
+                "bytes": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "reconsider_if": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "$defs": {
@@ -149,12 +216,15 @@
           "type": "string"
         },
         "arxiv_id": {
-          "type": "string",
-          "pattern": "^[0-9]{4}\\.[0-9]{4,5}$"
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\d{4}\\.\\d{4,5}$"
         },
         "source_url": {
           "type": "string",
-          "pattern": "^https://arxiv\\.org/abs/[0-9]{4}\\.[0-9]{4,5}$"
+          "pattern": "^https://"
         },
         "versions": {
           "type": "array",
@@ -167,7 +237,7 @@
             "properties": {
               "version": {
                 "type": "string",
-                "pattern": "^v[0-9]+$"
+                "pattern": "^(v[0-9]+|live)$"
               },
               "date": {
                 "type": "string",
@@ -354,6 +424,23 @@
           ],
           "items": {},
           "description": "Domain field carried through from extraction."
+        },
+        "relevance_to_project": {
+          "type": "string",
+          "minLength": 20,
+          "description": "Honest statement of what this source does and does not inform."
+        },
+        "admitted_for": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "taxonomy_reference",
+              "design_input",
+              "hypothesis_seed",
+              "citation_only",
+              "security_rule"
+            ]
+          }
         }
       }
     },

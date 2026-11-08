@@ -60,13 +60,22 @@ def check_arxiv_url_consistency(meta: dict) -> list[str]:
     for doc in meta.get("documents", []):
         did = doc.get("doc_id", "?")
         url = doc.get("source_url", "")
-        match = ARXIV_IN_URL.match(url)
-        if not match:
-            errors.append(f"{did}: source_url is not a canonical arXiv abs URL: {url!r}")
-        elif match.group(1) != doc.get("arxiv_id"):
-            errors.append(
-                f"{did}: arxiv_id {doc.get('arxiv_id')!r} does not match source_url {url!r}"
-            )
+        arxiv_id = doc.get("arxiv_id")
+        if arxiv_id:
+            match = ARXIV_IN_URL.match(url)
+            if not match:
+                errors.append(f"{did}: arxiv_id set but source_url is not a canonical arXiv abs URL: {url!r}")
+            elif match.group(1) != arxiv_id:
+                errors.append(
+                    f"{did}: arxiv_id {arxiv_id!r} does not match source_url {url!r}"
+                )
+        else:
+            # non-arXiv sources must still resolve to a real https URL, and must not
+            # masquerade as arXiv records
+            if not url.startswith("https://"):
+                errors.append(f"{did}: source_url must be https: {url!r}")
+            if "arxiv.org" in url:
+                errors.append(f"{did}: source_url points at arXiv but arxiv_id is null")
     return errors
 
 
@@ -400,6 +409,29 @@ def check_licence_scope(paths: list[str]) -> list[str]:
     return errors
 
 
+REJECT_REASONS = {
+    "provenance_unestablished", "unretrievable", "licence_forbids",
+    "duplicate", "out_of_scope", "superseded",
+}
+
+
+def check_rejected_sources(meta: dict) -> list[str]:
+    """A rejection is a claim too: it needs a reason and at least one attempt behind it."""
+    errors, seen = [], set()
+    for r in meta.get("rejected_sources", []):
+        sid = r.get("source_id")
+        if sid in seen:
+            errors.append(f"{sid}: rejected source listed twice")
+        seen.add(sid)
+        if r.get("reason_code") not in REJECT_REASONS:
+            errors.append(f"{sid}: unknown rejection reason {r.get('reason_code')!r}")
+        if not r.get("retrieval_attempts"):
+            errors.append(f"{sid}: rejected with no retrieval attempt recorded, so the rejection is unevidenced")
+        if len(r.get("evidence", "")) < 40:
+            errors.append(f"{sid}: rejection evidence is too thin to check")
+    return errors
+
+
 def check_locator_witness(claims_doc: dict, retrievals: dict) -> list[str]:
     """A verified locator needs a verbatim witness, not just a plausible section number.
 
@@ -472,6 +504,7 @@ def validate_all(root: Path = ROOT) -> dict[str, list[str]]:
     report["locator_resolution"] = check_locator_resolution(claims_doc)
     report["extension_keys"] = check_extension_keys(meta)
     report["licence_scope"] = check_licence_scope(tracked)
+    report["rejected_sources"] = check_rejected_sources(meta)
     report["locator_witness"] = check_locator_witness(
         claims_doc, load(root / "harness/retrievals/D3.json") if (root / "harness/retrievals/D3.json").exists() else {}
     )

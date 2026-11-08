@@ -125,7 +125,7 @@ def test_blocks_negated_publication_phrase(tmp_path):
 
 def test_blocks_claim_pointing_at_deleted_document():
     broken = copy.deepcopy(CLAIMS)
-    broken["claims"][0]["document_id"] = "D7"
+    broken["claims"][0]["document_id"] = "D99"
     assert check_claim_gate(broken, DOC_IDS)
 
 
