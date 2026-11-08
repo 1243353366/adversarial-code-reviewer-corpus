@@ -46,8 +46,8 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 ```
 python tools/validate_corpus.py   # 17 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 103 tests: validators, adversarial attacks, live hostile-peer cases
-python tools/repro.py --check     # 29 defects: each reproduces on its historical state, then stays caught
+pytest -q                         # 120 tests: validators, attacks, hostile peers, deception
+python tools/repro.py --check     # 35 defects: each reproduces on its historical state, then stays caught
 ```
 
 Sixteen checks, not four. The later ones were added by attacking the validators themselves: six of them exist because a mutation got through the first version. The four mutations that still get through are written as passing tests, so the limits are visible in code rather than discovered in an incident. See [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md).
@@ -82,6 +82,12 @@ A rule the repository owner can bypass is not a rule, it is a preference. `enfor
 This is the same failure mode as the license paragraph and the fabricated citations, at the level of process instead of prose: something that looked like enforcement while being advisory. The pattern has now occurred five times in this project. It is the actual subject of the repository.
 
 The rule is enforced by the platform instead of by intention: a standard that lives in prose is a standard that has already been broken once.
+
+## Deception layer
+
+The peer supplies data; the listener supplies meaning. `harness/deception/` makes the second half true: credentials generated per issuance rather than copied, an in-memory filesystem that refuses to resolve itself out of bounds, a simulated shell with a whitelisted grammar and no execution primitive anywhere, canary tokens that fire on reuse rather than discovery, and two watermark layers so a leaked document identifies which issuance leaked and how many were merged.
+
+Attribution is the point. A trap that wastes an attacker's afternoon is a delay; a trap that reports which fabricated package came back is intelligence about the attacker's pipeline. The limits are tested rather than claimed: strip both watermark layers and the text is unattributable, which is why credential values are registered server-side as a second route.
 
 ## Declared controls and effective controls
 

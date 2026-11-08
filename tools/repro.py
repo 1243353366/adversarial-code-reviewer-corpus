@@ -307,6 +307,104 @@ from harness.untrusted_peer.peer import ScriptedPeer as _Peer  # noqa: E402
 _GOOD = {"type": "observation", "seq": 1, "note": "ok"}
 
 
+# --- deception layer -------------------------------------------------------------
+
+import os  # noqa: E402
+
+from harness.deception import Issuance, watermark  # noqa: E402
+from harness.deception.alerts import CanaryLedger  # noqa: E402
+from harness.deception.credentials import CredentialRegistry  # noqa: E402
+from harness.deception.shell import SimulatedShell  # noqa: E402
+from harness.deception.vault import EscapedRoot, FakeTree  # noqa: E402
+
+
+def _dec(kind: str):
+    """True = the naive past, which must show the defect; False = the shipped code."""
+
+    def check(naive: bool) -> list[str]:
+        issuance = Issuance.create("camp-x", "IS-9001")
+        registry, tree = CredentialRegistry(), FakeTree(issuance)
+        shell = SimulatedShell(issuance, registry, tree)
+        ledger = CanaryLedger(registry)
+        ledger.issue(issuance)
+
+        if kind == "traversal":
+            import posixpath
+            path = "/../../etc/passwd"
+            if naive:
+                norm = posixpath.normpath("/" + path.lstrip("/"))
+                return [] if norm != "/etc/passwd" else ["defect reproduced: /etc/passwd served"]
+            try:
+                tree.read(path)
+            except EscapedRoot:
+                return []
+            return ["hardened tree served a traversal path"]
+
+        if kind == "env_leak":
+            os.environ["AWS_SECRET_ACCESS_KEY"] = "REAL-SECRET-VALUE"
+            try:
+                out = os.environ["AWS_SECRET_ACCESS_KEY"] if naive else shell.run("env")["stdout"]
+                leaked = "REAL-SECRET-VALUE" in out
+                if naive:
+                    return ["defect reproduced: the listener's own secret reached output"] if leaked else []
+                return [] if not leaked else ["hardened env leaked the listener environment"]
+            finally:
+                os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
+
+        if kind == "shared_credential":
+            second = Issuance.create("camp-x", "IS-9002")
+            if naive:
+                # one value issued for both, so a leak cannot say which place leaked it
+                shared = {"AKIASHAREDVALUE123"}
+                return [] if len(shared) > 1 else [
+                    "defect reproduced: two issuances, one value, no way to attribute the leak"
+                ]
+            owner = registry.attribute(registry.aws_like(second))
+            if owner is None or owner.issuance_id != "IS-9002":
+                return [f"value attributed to {getattr(owner, 'issuance_id', None)}"]
+            return []
+
+        if kind == "mark_strippable":
+            body = tree.read("/srv/app/README.internal.md")
+            scrubbed = body.replace("\u200b", "").replace("\u200c", "")
+            kept = watermark.attribute(scrubbed)
+            if naive:
+                return [] if not kept else ["defect reproduced: scrubbing zero-width killed attribution"]
+            return [] if kept else ["the visible mark did not survive scrubbing"]
+
+        if kind == "canary_silent":
+            transcript = shell.run("env")["stdout"]
+            if naive:
+                unwatched = CanaryLedger(CredentialRegistry())  # nothing registered, nothing watching
+                return [] if unwatched.scan(transcript) else [
+                    "defect reproduced: reuse of an artifact raised no alert"
+                ]
+            first, second = ledger.scan(transcript), ledger.scan(transcript)
+            return [] if first and not second else ["the canary did not fire exactly once"]
+
+        if kind == "shell_exec":
+            if naive:
+                def executing_stub(line: str) -> dict:
+                    """Stands in for `subprocess.run(line, shell=True)` without running it."""
+                    return {"stdout": line + "\n", "stderr": "", "exit": 0, "issuance_id": "naive"}
+                result = executing_stub("rm -rf / --no-preserve-root")
+                return ["defect reproduced: the peer's string reached a shell"] if result["exit"] == 0 else []
+            result = shell.run("rm -rf / --no-preserve-root")
+            return [] if result["exit"] == 127 and not result["stdout"] else ["an unknown command was answered"]
+
+        return [f"unknown deception repro {kind}"]
+
+    return check
+
+
+def _naive_flag() -> bool:
+    return True
+
+
+def _hardened_flag() -> bool:
+    return False
+
+
 def _peer_guard(kind: str, expected: str | None = None, neutralized=None):
     """historical = the naive listener, current = the hardened one.
 
@@ -575,6 +673,18 @@ REGISTRY: list[Repro] = [
     Repro("R29", "nothing bounds how long a peer may take to send one frame",
           "a trickle costing three seconds per read",
           _peer_guard("slow_trickle", expected="deadline_exceeded"), _naive, _hard),
+    Repro("R30", "path traversal served a host file after being normalized first",
+          "a lookup of /../../etc/passwd", _dec("traversal"), _naive_flag, _hardened_flag),
+    Repro("R31", "command output could carry the listener's own environment",
+          "an env request beside a real AWS secret", _dec("env_leak"), _naive_flag, _hardened_flag),
+    Repro("R32", "one shared credential made a leak unattributable",
+          "two issuances, one value", _dec("shared_credential"), _naive_flag, _hardened_flag),
+    Repro("R33", "the watermark died as soon as invisible characters were scrubbed",
+          "zero-width removal before exfiltration", _dec("mark_strippable"), _naive_flag, _hardened_flag),
+    Repro("R34", "a canary nobody watched: reuse raised nothing",
+          "the same transcript scanned twice", _dec("canary_silent"), _naive_flag, _hardened_flag),
+    Repro("R35", "the peer's command string reached a shell",
+          "rm -rf / against the simulated shell", _dec("shell_exec"), _naive_flag, _hardened_flag),
 ]
 
 
