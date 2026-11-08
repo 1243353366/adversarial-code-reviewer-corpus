@@ -46,7 +46,7 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 ```
 python tools/validate_corpus.py   # 17 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 205 tests: validators, attacks, hostile peers, deception
+pytest -q                         # 219 tests: validators, attacks, hostile peers, deception
 python tools/repro.py --check     # 58 defects: each reproduces on its historical state, then stays caught
 ```
 
@@ -88,6 +88,14 @@ The rule is enforced by the platform instead of by intention: a standard that li
 `harness/cost/containment.py` answers one question per connection: what did this interaction cost against what it asked for. Three ratios, bytes out over bytes in, CPU per request byte, outstanding frames per window. Escalation runs throttle, then quarantine with a fixed synthetic reply, then termination with a remembered denial, and a cheap sample buys back a strike so a burst cannot accumulate into a kill.
 
 The degenerate case is the whole point. An empty request is the cheapest thing to send and the most expensive to answer, so request size floors at one byte rather than dividing by zero; without the floor the ratio is NaN and NaN compares false against every limit, which is a silent bypass.
+
+## Reviewing ourselves
+
+`tools/self_review.py` applies the catalogue's own rules back to the modules that do the cataloguing: peer authority read from payload, wire length used as an allocation size, unbounded queue, mutable default, bare except, identity compared to a string, unfloored ratio, and thresholds living outside a policy file. It runs in CI on every push.
+
+Exemptions live in `harness/self_review_allow.txt` and each one carries a written reason; an entry without one refuses to load. Three exemptions exist today, all for the naive listener fixtures and for the line that reads a peer's claimed origin in order to record it as a forgery.
+
+Current output: 0 high findings, 3 low. The low ones are real and unfixed: `MAX_HOPS`, `MAX_WALL_SECONDS` and `MAX_FRAMES_PER_CONNECTION` are policy that no single file declares.
 
 ## Deception layer
 
