@@ -928,6 +928,45 @@ def _sr_case(kind: str):
             return [] if findings(code) else ["guard credited a comparison that rejects nothing"]
 
 
+
+        if kind == "alias_chain":
+            import pathlib as _pl
+            import struct as _struct
+            import sys as _sys
+            _sys.path.insert(0, str(_pl.Path(__file__).resolve().parent.parent))
+            from harness.untrusted_peer.alias_chain import GuardedAliasChain, NaiveAliasChain
+            from harness.untrusted_peer.protocol import ProtocolError
+
+            class _Peer:
+                def __init__(self, declared):
+                    self.declared = declared
+                    self.requests = []
+                    self._pending = True
+
+                def read_exact(self, n, deadline=None):
+                    self.requests.append(n)
+                    if self._pending:
+                        self._pending = False
+                        return _struct.pack(">I", self.declared)
+                    if n > (1 << 20):
+                        raise MemoryError(n)
+                    return b"x" * n
+
+            if naive:
+                peer = _Peer(2_000_000_000)
+                try:
+                    NaiveAliasChain().read_one(peer)
+                except MemoryError:
+                    return ["defect reproduced: two aliases, no bound, allocation sized by the peer"]
+                return ["naive chain did not allocate the declared size"]
+
+            peer = _Peer(2_000_000_000)
+            try:
+                GuardedAliasChain().read_one(peer)
+            except ProtocolError:
+                return [] if peer.requests == [4] else [f"read continued after rejection: {peer.requests}"]
+            return ["guarded chain accepted an oversized frame"]
+
         return ["unknown case"]
 
     return check
@@ -1159,6 +1198,8 @@ REGISTRY: list[Repro] = [
           "size = max(peer_length, 1) then read_exact(size)", _sr_case("max_as_ceiling"), _naive_flag, _hardened_flag),
     Repro("R64", "a comparison that rejects nothing was credited as a bound",
           "if n < MAX_FRAME: pass then read_exact(n)", _sr_case("non_rejecting_compare"), _naive_flag, _hardened_flag),
+    Repro("R66", "a wire length laundered through two aliases reached the allocation unbounded",
+          "declared -> hinted -> size = int(hinted) -> read_exact(size)", _sr_case("alias_chain"), _naive_flag, _hardened_flag),
 ]
 
 

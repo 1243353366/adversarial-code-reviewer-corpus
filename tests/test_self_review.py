@@ -284,6 +284,7 @@ def test_the_committed_allowlist_is_exactly_what_is_expected():
     assert sorted((p, r) for p, r, _ in allowed) == [
         ("harness/provenance/listener.py", "peer_authority_from_payload"),
         ("harness/provenance/listener.py", "peer_authority_from_payload"),
+        ("harness/untrusted_peer/alias_chain.py", "peer_length_before_bound"),
         ("harness/untrusted_peer/naive.py", "peer_authority_from_payload"),
         ("harness/untrusted_peer/naive.py", "peer_length_before_bound"),
     ]

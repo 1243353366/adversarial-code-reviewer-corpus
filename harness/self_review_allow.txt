@@ -9,3 +9,4 @@ harness/untrusted_peer/naive.py:peer_length_before_bound:a69f610d  # fixture by 
 harness/untrusted_peer/naive.py:peer_authority_from_payload:5c722bc3  # same fixture: adopting the peer's asserted role is the point of the file
 harness/provenance/listener.py:peer_authority_from_payload:7819b6f8  # NaiveListener, the deliberately vulnerable class this module contrasts against
 harness/provenance/listener.py:peer_authority_from_payload:60f2f66d  # GuardedListener records the claimed origin as a forgery before overwriting it with the connection's
+harness/untrusted_peer/alias_chain.py:peer_length_before_bound:279b5462  # NaiveAliasChain is a fixture: the unbounded aliased length is the defect it demonstrates
