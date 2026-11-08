@@ -8,14 +8,24 @@ rule and one sentence on why it matters.
     python tools/self_review.py            # human table, exit 1 on any high severity
     python tools/self_review.py --list     # rules only
 
-Deliberate anti-pattern fixtures (harness/*/naive.py) are exempt only through an allowlist
-entry that carries a written reason. An exemption without a reason is a suppression.
+Exemptions are occurrence-specific. An entry names the file, the rule and a fingerprint of
+the exact source line, so exempting one read of a peer field cannot silently exempt the next
+one added to the same file. An entry that matches no current finding is stale and fails the
+run; an entry that matches more than one is ambiguous and also fails.
+
+What this is not. The analysis is intraprocedural, path-insensitive and blind to values that
+travel through containers, attributes or function returns. `rule_length_before_bound` follows
+assignment and conversion chains inside one function and treats a comparison against a
+threshold as validation; it does not prove a bound exists, only that none is visible. A clean
+run means none of these eight rules found a defect it can see, not that the code is correct.
 """
 from __future__ import annotations
 
 import ast
+import hashlib
+import re
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -23,6 +33,9 @@ TARGETS = [ROOT / "harness", ROOT / "tools"]
 ALLOWLIST = ROOT / "harness" / "self_review_allow.txt"
 PEER_AUTH_KEYS = {"role", "origin", "cmd", "admin", "scope", "authenticated"}
 PAYLOAD_NAMES = {"msg", "payload", "body", "message", "data", "envelope", "frame"}
+SIZE_CALLS = {"read_exact", "recv", "allocate", "bytearray", "read"}
+PASSTHROUGH = {"int", "float", "abs", "str", "bool"}
+CLAMPS = {"min", "max"}
 
 HIGH, MEDIUM, LOW = "high", "medium", "low"
 
@@ -34,25 +47,64 @@ class Finding:
     rule: str
     severity: str
     why: str
+    fingerprint: str = ""
+
+    @property
+    def key(self) -> tuple[str, str, str]:
+        return (self.path, self.rule, self.fingerprint)
 
     def render(self) -> str:
         return f"{self.path}:{self.line}  {self.severity:6} {self.rule:28} {self.why}"
 
 
-def _names_from(module: ast.AST, pattern: str) -> set[str]:
-    """Local variables assigned from a call whose dotted name ends with `pattern`."""
-    out: set[str] = set()
-    for node in ast.walk(module):
-        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
-            func = node.value.func
-            dotted = getattr(func, "attr", getattr(func, "id", ""))
-            if dotted == pattern:
-                for tgt in node.targets:
-                    if isinstance(tgt, ast.Name):
-                        out.add(tgt.id)
-                    elif isinstance(tgt, ast.Tuple):
-                        out.update(e.id for e in tgt.elts if isinstance(e, ast.Name))
+def fingerprint_of(source_line: str) -> str:
+    """Stable across line shifts, and specific enough that a different line differs."""
+    normalised = re.sub(r"\s+", " ", source_line).strip()
+    return hashlib.sha1(normalised.encode()).hexdigest()[:8]
+
+
+def _scope_nodes(scope: ast.AST):
+    """Nodes in one function body, without descending into nested scopes."""
+    stack = list(getattr(scope, "body", []))
+    while stack:
+        node = stack.pop(0)
+        yield node
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            continue
+        stack.extend(ast.iter_child_nodes(node))
+
+
+def _scopes(tree: ast.AST):
+    yield tree
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            yield node
+
+
+def _assigns(scope: ast.AST):
+    for node in _scope_nodes(scope):
+        if isinstance(node, ast.Assign):
+            yield node
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            yield ast.Assign(targets=[node.target], value=node.value)
+
+
+def _target_names(targets) -> list[str]:
+    """Names bound by an assignment, unwrapping tuple and list unpacking."""
+    out: list[str] = []
+    for target in targets:
+        if isinstance(target, ast.Name):
+            out.append(target.id)
+        elif isinstance(target, (ast.Tuple, ast.List)):
+            out.extend(_target_names(target.elts))
+        elif isinstance(target, ast.Starred):
+            out.extend(_target_names([target.value]))
     return out
+
+
+def _call_name(call: ast.Call) -> str:
+    func = call.func
+    return getattr(func, "attr", getattr(func, "id", ""))
 
 
 def rule_peer_authority(tree: ast.AST, path: str) -> list[Finding]:
@@ -62,38 +114,98 @@ def rule_peer_authority(tree: ast.AST, path: str) -> list[Finding]:
         if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name):
             if node.value.id not in PAYLOAD_NAMES:
                 continue
-            key = node.slice
-            name = getattr(key, "value", None) if isinstance(key, ast.Constant) else None
-            if isinstance(name, str) and name in PEER_AUTH_KEYS:
+            if isinstance(node.slice, ast.Constant) and node.slice.value in PEER_AUTH_KEYS:
                 out.append(Finding(path, node.lineno, "peer_authority_from_payload", HIGH,
-                                   f"'{name}' read from a peer-supplied mapping decides trust"))
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-            if node.func.attr != "get" or not isinstance(node.func.value, ast.Name):
+                                   f"'{node.slice.value}' read from a peer-supplied mapping"))
+        if isinstance(node, ast.Call) and _call_name(node) == "get":
+            if not isinstance(node.func.value, ast.Name) or node.func.value.id not in PAYLOAD_NAMES:
                 continue
-            if node.func.value.id not in PAYLOAD_NAMES or not node.args:
-                continue
-            arg = node.args[0]
-            if isinstance(arg, ast.Constant) and arg.value in PEER_AUTH_KEYS:
+            if node.args and isinstance(node.args[0], ast.Constant) and node.args[0].value in PEER_AUTH_KEYS:
                 out.append(Finding(path, node.lineno, "peer_authority_from_payload", HIGH,
-                                   f"'{arg.value}' read from a peer-supplied mapping decides trust"))
+                                   f"'{node.args[0].value}' read from a peer-supplied mapping"))
+    return out
+
+
+def _taint_analysis(scope: ast.AST) -> tuple[set[str], set[str]]:
+    """Names carrying wire-derived values, and names a visible check or clamp has bounded.
+
+    Seeded by `struct.unpack`, followed through assignments, conversions and arithmetic.
+    A name is considered bounded when it is clamped by min/max or compared against a
+    numeric constant or an upper-case threshold, because this codebase rejects on that
+    comparison. The second case is an assumption, not a proof: it cannot see whether the
+    reject branch actually returns.
+    """
+    tainted: set[str] = set()
+    bounded: set[str] = set()
+    assigns = list(_assigns(scope))
+    for _ in range(3):
+        for node in assigns:
+            value = node.value
+            if isinstance(value, ast.Call) and _call_name(value) == "unpack":
+                tainted.update(_target_names(node.targets))
+                continue
+            origin = _expr_taint(value, tainted)
+            if not origin:
+                continue
+            names = _target_names(node.targets)
+            if isinstance(value, ast.Call) and _call_name(value) in CLAMPS:
+                bounded.update(names)
+            else:
+                tainted.update(names)
+    for node in _scope_nodes(scope):
+        if isinstance(node, ast.Compare):
+            sides = [node.left, *node.comparators]
+            for a, b in zip(sides, sides[1:]):
+                if not isinstance(a, ast.Name) or a.id not in tainted:
+                    continue
+                if (isinstance(b, ast.Constant) and isinstance(b.value, (int, float))) or (
+                        isinstance(b, ast.Name) and b.id.isupper()):
+                    bounded.add(a.id)
+    return tainted, bounded
+
+
+def _expr_taint(expr: ast.AST, tainted: set[str]) -> bool:
+    for node in ast.walk(expr):
+        if isinstance(node, ast.Name) and node.id in tainted:
+            return True
+        if isinstance(node, ast.Call) and _call_name(node) == "unpack":
+            return True
+    return False
+
+
+def _unguarded_size_names(expr: ast.AST, tainted: set[str], bounded: set[str]) -> set[str]:
+    """Wire-derived names in a size expression, ignoring anything a clamp already bounds."""
+    out: set[str] = set()
+
+    def walk(node: ast.AST) -> None:
+        if isinstance(node, ast.Call) and _call_name(node) in CLAMPS:
+            return
+        if isinstance(node, ast.Name) and node.id in tainted and node.id not in bounded:
+            out.add(node.id)
+        for child in ast.iter_child_nodes(node):
+            walk(child)
+
+    walk(expr)
     return out
 
 
 def rule_length_before_bound(tree: ast.AST, path: str) -> list[Finding]:
-    """A length taken from the peer used as an allocation or read size."""
-    unpacked = _names_from(tree, "unpack")
+    """A wire-derived length used as an allocation or read size, through aliases and casts."""
     out = []
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call) or not node.args:
+    for scope in _scopes(tree):
+        tainted, bounded = _taint_analysis(scope)
+        if not tainted:
             continue
-        func = node.func
-        name = getattr(func, "attr", getattr(func, "id", ""))
-        if name not in {"read_exact", "recv", "allocate", "bytearray"}:
-            continue
-        arg = node.args[0]
-        if isinstance(arg, ast.Name) and arg.id in unpacked:
-            out.append(Finding(path, node.lineno, "peer_length_before_bound", HIGH,
-                               f"'{arg.id}' came from the wire and is used as a size unbounded"))
+        for node in _scope_nodes(scope):
+            if not isinstance(node, ast.Call) or not node.args:
+                continue
+            if _call_name(node) not in SIZE_CALLS:
+                continue
+            risky = _unguarded_size_names(node.args[0], tainted, bounded)
+            if risky:
+                out.append(Finding(path, node.lineno, "peer_length_before_bound", HIGH,
+                                   f"'{sorted(risky)[0]}' came from the wire and reaches a size "
+                                   f"with no visible bound"))
     return out
 
 
@@ -132,44 +244,37 @@ def rule_string_identity(tree: ast.AST, path: str) -> list[Finding]:
     """Provenance or capability compared against a string literal."""
     out = []
     for node in ast.walk(tree):
-        if not isinstance(node, ast.Compare) or len(node.ops) != 1:
+        if not isinstance(node, ast.Compare):
             continue
-        left, right = node.left, node.comparators[0]
-        for a, b in ((left, right), (right, left)):
+        sides = [node.left, *node.comparators]
+        for a, b in zip(sides, sides[1:]):
             label = getattr(a, "id", None) or getattr(a, "attr", None) or ""
-            if isinstance(b, ast.Constant) and isinstance(b.value, str):
-                if label in {"origin", "cap", "capability", "role"}:
-                    out.append(Finding(path, node.lineno, "string_identity_compare", HIGH,
-                                       f"{label} compared to a literal, so any writer can spell it"))
-    return out
-
-
-def _floored_names(tree: ast.AST) -> set[str]:
-    """Names bound to max(...), which is how this codebase floors a denominator."""
-    out: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
-            if getattr(node.value.func, "id", "") == "max":
-                out.update(t.id for t in node.targets if isinstance(t, ast.Name))
+            if label in {"origin", "cap", "capability", "role"} and isinstance(b, ast.Constant) \
+                    and isinstance(b.value, str):
+                out.append(Finding(path, node.lineno, "string_identity_compare", HIGH,
+                                   f"{label} compared to a literal, so any writer can spell it"))
     return out
 
 
 def rule_ratio_without_floor(tree: ast.AST, path: str) -> list[Finding]:
-    """A ratio whose denominator is peer-supplied can be zero, and 0/0 is not a small number."""
+    """A ratio whose denominator can be zero, judged inside the scope that does the division."""
     out = []
     if not path.startswith("harness/"):
-        return out  # authoring scripts do arithmetic over their own lists, not over peer input
-    floored = _floored_names(tree)
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.BinOp) or not isinstance(node.op, ast.Div):
-            continue
-        denom = node.right
-        guarded = isinstance(denom, ast.Call) and getattr(denom.func, "id", "") == "max"
-        if isinstance(denom, ast.Name) and denom.id in floored:
-            guarded = True
-        if not guarded and isinstance(denom, (ast.Name, ast.Attribute)):
-            out.append(Finding(path, node.lineno, "ratio_without_floor", HIGH,
-                               "denominator is unguarded, so an empty request yields NaN"))
+        return out  # authoring scripts compute over their own lists, not over peer input
+    for scope in _scopes(tree):
+        floored: set[str] = set()
+        for node in _assigns(scope):
+            if isinstance(node.value, ast.Call) and _call_name(node.value) == "max":
+                floored.update(_target_names(node.targets))
+        for node in _scope_nodes(scope):
+            if not isinstance(node, ast.BinOp) or not isinstance(node.op, ast.Div):
+                continue
+            denom = node.right
+            guarded = (isinstance(denom, ast.Call) and _call_name(denom) in CLAMPS) or (
+                isinstance(denom, ast.Name) and denom.id in floored)
+            if not guarded and isinstance(denom, (ast.Name, ast.Attribute)):
+                out.append(Finding(path, node.lineno, "ratio_without_floor", HIGH,
+                                   "denominator is unguarded in this scope, so an empty request yields NaN"))
     return out
 
 
@@ -178,13 +283,13 @@ def rule_policy_scatter(tree: ast.AST, path: str) -> list[Finding]:
     out = []
     if not path.startswith("harness/") or path.endswith("containment.py"):
         return out
-    threshold_words = ("MAX", "LIMIT", "BUDGET", "THRESHOLD", "CAP", "QUOTA", "TIMEOUT", "FLOOR")
+    words = ("MAX", "LIMIT", "BUDGET", "THRESHOLD", "CAP", "QUOTA", "TIMEOUT", "FLOOR")
     for node in tree.body:
         if not isinstance(node, ast.Assign):
             continue
         if not all(isinstance(t, ast.Name) and t.id.isupper() for t in node.targets):
             continue
-        if not any(w in node.targets[0].id for w in threshold_words):
+        if not any(w in node.targets[0].id for w in words):
             continue
         if isinstance(node.value, ast.Constant) and isinstance(node.value.value, (int, float)):
             out.append(Finding(path, node.lineno, "policy_scatter", LOW,
@@ -202,37 +307,77 @@ RULES = [
     rule_ratio_without_floor,
     rule_policy_scatter,
 ]
+RULE_NAMES = {
+    "peer_authority_from_payload",
+    "peer_length_before_bound",
+    "unbounded_queue",
+    "mutable_default",
+    "bare_except",
+    "string_identity_compare",
+    "ratio_without_floor",
+    "policy_scatter",
+}
 
 
-def load_allowlist(path: Path = ALLOWLIST) -> dict[tuple[str, str], str]:
-    allowed: dict[tuple[str, str], str] = {}
+def load_allowlist(path: Path = ALLOWLIST) -> dict[tuple[str, str, str], str]:
+    """Entries are `path:rule:fingerprint  # reason`. Anything looser is a suppression."""
+    allowed: dict[tuple[str, str, str], str] = {}
     if not path.exists():
         return allowed
-    for raw in path.read_text().splitlines():
+    for number, raw in enumerate(path.read_text().splitlines(), 1):
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
         target, sep, reason = line.partition("  #")
         if not sep or len(reason.strip()) < 20:
-            raise SystemExit(f"allowlist entry without a reason: {raw!r}")
-        place, _, rule = target.strip().rpartition(":")
-        allowed[(place.strip(), rule.strip())] = reason.strip()
+            raise SystemExit(f"{path.name}:{number}: exemption without a written reason: {raw!r}")
+        place, rule, fp = (target.strip().split(":") + ["", ""])[:3]
+        if rule not in RULE_NAMES:
+            raise SystemExit(f"{path.name}:{number}: unknown rule {rule!r}")
+        if not re.fullmatch(r"[0-9a-f]{8}", fp):
+            raise SystemExit(f"{path.name}:{number}: exemption is not occurrence-specific; "
+                             f"expected path:rule:fingerprint")
+        if not (ROOT / place).exists():
+            raise SystemExit(f"{path.name}:{number}: no such file {place!r}")
+        key = (place, rule, fp)
+        if key in allowed:
+            raise SystemExit(f"{path.name}:{number}: duplicate exemption for {place}:{rule}:{fp}")
+        allowed[key] = reason.strip()
     return allowed
 
 
-def review(paths: list[Path] | None = None, allowlist: dict | None = None) -> list[Finding]:
-    allowed = load_allowlist() if allowlist is None else allowlist
+def _collect(paths: list[Path] | None = None) -> list[Finding]:
     findings: list[Finding] = []
     for base in (paths or TARGETS):
         for file in sorted(base.rglob("*.py")):
             rel = str(file.relative_to(ROOT))
-            tree = ast.parse(file.read_text(), filename=rel)
+            text = file.read_text()
+            lines = text.splitlines()
+            tree = ast.parse(text, filename=rel)
             for rule in RULES:
                 for finding in rule(tree, rel):
-                    if (rel, finding.rule) in allowed:
-                        continue
-                    findings.append(finding)
+                    source = lines[finding.line - 1] if finding.line <= len(lines) else ""
+                    findings.append(replace(finding, fingerprint=fingerprint_of(source)))
     return findings
+
+
+def apply_allowlist(findings: list[Finding], allowed: dict[tuple[str, str, str], str]) -> list[Finding]:
+    """Exempt exactly one occurrence per entry. Stale and ambiguous entries are errors."""
+    remaining = list(findings)
+    for key, reason in allowed.items():
+        matches = [f for f in remaining if f.key == key]
+        if not matches:
+            raise SystemExit(f"stale exemption (matches nothing): {key[0]}:{key[1]}:{key[2]} — {reason}")
+        if len(matches) > 1:
+            raise SystemExit(f"ambiguous exemption (matches {len(matches)} findings): "
+                             f"{key[0]}:{key[1]}:{key[2]} — distinguish the occurrences first")
+        remaining.remove(matches[0])
+    return remaining
+
+
+def review(paths: list[Path] | None = None, allowlist: dict | None = None) -> list[Finding]:
+    allowed = load_allowlist() if allowlist is None else allowlist
+    return apply_allowlist(_collect(paths), allowed)
 
 
 def main(argv: list[str]) -> int:
