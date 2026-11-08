@@ -25,6 +25,9 @@ jobs:
       - name: failure intelligence is internally consistent
         run: python tools/failure_intelligence.py --check
 
+      - name: classifier scores against the labelled benchmark
+        run: python tools/failure_classifier.py --eval
+
       - name: emit findings for code scanning
         if: always()
         run: python tools/failure_intelligence.py --sarif findings.sarif

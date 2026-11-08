@@ -75,6 +75,8 @@ class Finding:
     regression_test: str | None = None
     root_cause: str = ""
     status: str = "open"
+    evidence_codes: list[str] = field(default_factory=list)
+    human_override: dict = field(default_factory=dict)
 
     def problems(self) -> list[str]:
         """Everything wrong with this record, so the ledger can refuse to load it."""
@@ -107,6 +109,8 @@ class Finding:
             out.append("resolved without a witness: needs a regression test and a reproduction or evidence")
         if self.status == "rejected" and not self.evidence:
             out.append("rejected without evidence; a refusal needs its own proof")
+        if self.human_override and not self.human_override.get("rationale"):
+            out.append("human override recorded without a rationale")
         return out
 
     @property
