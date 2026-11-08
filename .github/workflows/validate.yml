@@ -21,3 +21,16 @@ jobs:
         run: python tools/self_review.py
       - name: Tests
         run: pytest -q
+
+      - name: failure intelligence is internally consistent
+        run: python tools/failure_intelligence.py --check
+
+      - name: emit findings for code scanning
+        if: always()
+        run: python tools/failure_intelligence.py --sarif findings.sarif
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: findings-sarif
+          path: findings.sarif
