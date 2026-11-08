@@ -725,6 +725,74 @@ def _cost(kind: str):
     return check
 
 
+# --- recovery verification --------------------------------------------------------
+
+from harness.recovery import (  # noqa: E402
+    APPARENT, CLEAN, CREDENTIALS, DIRTY, DISPUTED, HOST_PROBE, IN_BAND, LOG_SINK,
+    OUT_OF_BAND, PROCESS, REGRESSED, SESSIONS, UNAVAILABLE, VERIFIED, Claim, Evidence,
+    assess as _assess,
+)
+
+_RCLAIM = Claim(asserts_control_of="listener", expected_pid=101, expected_start_time=5000.0)
+_RID = "pid=101 start=5000.0"
+
+
+def _recovery_case(kind: str, naive: bool) -> list[str]:
+    """Naive recovers on process control; guarded refuses. Same evidence, different reading."""
+    evidence = [
+        Evidence(PROCESS, IN_BAND, CLEAN, 1, _RID),
+        Evidence(HOST_PROBE, OUT_OF_BAND, CLEAN, 1),
+        Evidence(SESSIONS, OUT_OF_BAND, CLEAN, 1),
+        Evidence(CREDENTIALS, OUT_OF_BAND, CLEAN, 1),
+        Evidence(LOG_SINK, OUT_OF_BAND, CLEAN, 1),
+    ]
+    if kind == "process_only":
+        evidence = [Evidence(PROCESS, IN_BAND, CLEAN, 1, _RID)]
+    elif kind == "unavailable_counts_clean":
+        evidence = [Evidence(PROCESS, IN_BAND, CLEAN, 1, _RID)] + [
+            Evidence(k, OUT_OF_BAND, UNAVAILABLE, 1) for k in (HOST_PROBE, SESSIONS)]
+    elif kind == "unknown_session_ignored":
+        evidence = evidence + [Evidence(SESSIONS, OUT_OF_BAND, DIRTY, 1, "one unattributed session")]
+    elif kind == "restart_undetected":
+        evidence = evidence + [Evidence(PROCESS, IN_BAND, CLEAN, 1, "pid=101 start=9000.0")]
+    elif kind == "single_round":
+        pass  # one round only, which is the defect
+    elif kind == "in_band_inventory":
+        evidence = [e for e in evidence if e.kind != SESSIONS] + [
+            Evidence(SESSIONS, IN_BAND, CLEAN, 1), Evidence(SESSIONS, IN_BAND, CLEAN, 2)]
+
+    if naive:
+        # the naive recovery check trusts the process it just took, and reads a failed
+        # probe as an absence of findings
+        if kind in ("process_only", "unavailable_counts_clean", "single_round", "in_band_inventory"):
+            return ["defect reproduced: recovery declared on in-band evidence alone"]
+        if kind == "unknown_session_ignored":
+            return ["defect reproduced: an unattributed session did not block recovery"]
+        if kind == "restart_undetected":
+            return ["defect reproduced: a restarted listener passed as the recovered process"]
+        return ["defect reproduced"]
+    v = _assess(_RCLAIM, evidence)
+    expected = {
+        "process_only": APPARENT,
+        "unavailable_counts_clean": APPARENT,
+        "unknown_session_ignored": DISPUTED,
+        "restart_undetected": REGRESSED,
+        "single_round": APPARENT,
+        "in_band_inventory": APPARENT,
+    }[kind]
+    if v.status != expected:
+        return [f"guard returned {v.status}, expected {expected}"]
+    if kind == "single_round" and v.status == VERIFIED:
+        return ["a single observation was accepted as verification"]
+    return []
+
+
+def _rec(kind: str):
+    def check(naive: bool) -> list[str]:
+        return _recovery_case(kind, naive)
+    return check
+
+
 REGISTRY: list[Repro] = [
     Repro("R01", "D3 acceptance status asserted without its basis",
           "a README line claiming TOSEM acceptance",
@@ -927,6 +995,18 @@ REGISTRY: list[Repro] = [
           "zero request bytes, 5KB of work", _cost("nan_ratio"), _naive_flag, _hardened_flag),
     Repro("R52", "queue growth was not measured, so a slow consumer looked cheap",
           "1KB in, 1KB out, eight frames outstanding", _cost("queue_blind"), _naive_flag, _hardened_flag),
+    Repro("R53", "process control was treated as control of the host",
+          "a listener taken, no out-of-band evidence", _rec("process_only"), _naive_flag, _hardened_flag),
+    Repro("R54", "a probe that could not run was read as clean",
+          "two unreachable out-of-band probes", _rec("unavailable_counts_clean"), _naive_flag, _hardened_flag),
+    Repro("R55", "an unattributed session did not block recovery",
+          "one session nobody owns", _rec("unknown_session_ignored"), _naive_flag, _hardened_flag),
+    Repro("R56", "a restarted listener passed as the recovered process",
+          "same pid, different start time", _rec("restart_undetected"), _naive_flag, _hardened_flag),
+    Repro("R57", "one observation was accepted as verification",
+          "a single round of clean checks", _rec("single_round"), _naive_flag, _hardened_flag),
+    Repro("R58", "session inventory was read through the host under test",
+          "an in-band inventory reporting itself complete", _rec("in_band_inventory"), _naive_flag, _hardened_flag),
 ]
 
 
