@@ -492,10 +492,10 @@ def r_licence_scope(state):
 
 
 def _witness_claims():
-    return CLAIMS, json.loads((ROOT / "harness/retrievals/D3.json").read_text())
+    return CLAIMS, _all_retrievals()
 
 
-def r_locator_witness(state):
+def r_locator_witness(state):  # noqa: D401
     claims, retrievals = state
     return V.check_locator_witness(claims, retrievals)
 
@@ -506,7 +506,7 @@ def _witness_stripped():
         if cl["locator_status"] == "verified":
             cl["locator"].pop("witness", None)
             break
-    return (c, json.loads((ROOT / "harness/retrievals/D3.json").read_text()))
+    return (c, _all_retrievals())
 
 
 def _as_payload(flat: dict) -> dict:
@@ -531,6 +531,69 @@ def _live_historical():
 def _live_current():
     policy = CP.load_expected()
     return {"required": policy["required"], "payload": _as_payload(policy["recorded"])}
+
+
+# --- review findings on PR #11 --------------------------------------------------
+
+import json as _json  # noqa: E402
+
+
+def _all_retrievals() -> dict:
+    merged = {"retrievals": {}}
+    for path in sorted((ROOT / "harness/retrievals").glob("*.json")):
+        merged["retrievals"].update(_json.load(open(path)).get("retrievals", {}))
+    return merged
+
+
+def _meta() -> dict:
+    return _json.load(open(ROOT / "corpus/out/research-metadata.json"))
+
+
+def _claims() -> dict:
+    return _json.load(open(ROOT / "corpus/out/claims.json"))
+
+
+def _foreign_witness(claims: dict) -> list[str]:
+    meta = _meta()
+    retrievals = _all_retrievals()
+    claim = next(c for c in claims["claims"] if c["claim_id"] == "D7-C01")
+    foreign = next(r for r, rec in retrievals["retrievals"].items() if rec["document_id"] == "D3")
+    claim["locator"]["witness"]["retrieval_id"] = foreign
+    return V.check_locator_witness(claims, retrievals, meta)
+
+
+def _clean_witness_check() -> list[str]:
+    return V.check_locator_witness(_claims(), _all_retrievals(), _meta())
+
+
+def _rejection_state(rejections: dict) -> list[str]:
+    return V.check_rejected_sources({"rejected_sources": rejections})
+
+
+def _bad_rejection(**over) -> dict:
+    base = {
+        "source_id": "RSX",
+        "url": "https://example.org/paper",
+        "reason_code": "unretrievable",
+        "retrieval_attempts": [{"url": "https://example.org/paper", "status": 403}],
+        "evidence": "Two requests returned 403 from the origin, so the page was never read.",
+    }
+    base.update(over)
+    return base
+
+
+def _loaded_manifests(names: list[str]) -> list[str]:
+    """A witness citing a document whose manifest was never loaded is an unknown retrieval."""
+    retrievals = {"retrievals": {}}
+    for name in names:
+        retrievals["retrievals"].update(
+            _json.load(open(ROOT / "harness/retrievals" / name)).get("retrievals", {})
+        )
+    return V.check_locator_witness(_claims(), retrievals, _meta())
+
+
+def _r18_state(text: str) -> list[str]:
+    return [] if "(`licence`/`license`," in text else ["the R18 record no longer names two spellings"]
 
 
 REGISTRY: list[Repro] = [
@@ -685,6 +748,34 @@ REGISTRY: list[Repro] = [
           "the same transcript scanned twice", _dec("canary_silent"), _naive_flag, _hardened_flag),
     Repro("R35", "the peer's command string reached a shell",
           "rm -rf / against the simulated shell", _dec("shell_exec"), _naive_flag, _hardened_flag),
+    Repro("R36", "a witness could cite a retrieval belonging to a different document",
+          "a D7 claim pointing at a valid D3 retrieval",
+          lambda errors: errors,
+          lambda: _foreign_witness(_claims()),
+          lambda: _clean_witness_check()),
+    Repro("R37", "a rejection could be evidenced by fetching an unrelated URL",
+          "one attempt at https://unrelated.test/x",
+          _rejection_state,
+          lambda: [_bad_rejection(retrieval_attempts=[{"url": "https://unrelated.test/x", "status": 403}])],
+          lambda: _meta().get("rejected_sources", [])),
+    Repro("R38", "a rejection could cite a status outside the HTTP range",
+          "status 999 recorded as the attempt",
+          _rejection_state,
+          lambda: [_bad_rejection(retrieval_attempts=[{"url": "https://example.org/paper", "status": 999}])],
+          lambda: _meta().get("rejected_sources", [])),
+    Repro("R39", "a URL check that was a prefix test, so https:// alone passed",
+          "the string https:// offered as a source URL",
+          lambda url: [e] if (e := V.url_structure_error(url)) else [],
+          lambda: "https://",
+          lambda: _meta()["documents"][-1]["source_url"]),
+    Repro("R40", "retrieval manifests were loaded by hardcoded filename, so a new one never registered",
+          "only D3.json loaded while D7 claims cite D7 retrievals",
+          _loaded_manifests, lambda: ["D3.json"], lambda: ["D3.json", "D6.json", "D7.json"]),
+    Repro("R41", "a global rename rewrote the historical R18 record it was meant to document",
+          "the row reduced to `license`/`license`",
+          _r18_state,
+          lambda: "| R18 | one concept spelled two ways (`license`/`license`) | x |",
+          lambda: (ROOT / "CHANGELOG.md").read_text()),
 ]
 
 

@@ -1,0 +1,14 @@
+{
+  "retrievals": {
+    "D6-2026-11-08-index": {
+      "document_id": "D6",
+      "url": "https://malpedia.caad.fkie.fraunhofer.de/families",
+      "retrieved_at": "2026-11-08T18:03Z",
+      "artifact_sha256": "b2fdbf6f324271c827aa56685425d0aaaa1fb45213c7701268f4558848259109",
+      "artifact_bytes": 388988,
+      "what_was_kept": "index retrieved and read; no entry text reproduced",
+      "reverify": "curl -sL https://malpedia.caad.fkie.fraunhofer.de/families | sha256sum"
+    }
+  },
+  "note": "Offsets are character offsets into the whitespace-normalized text of the retrieval. A quote plus an offset plus an artifact hash is checkable by a second party after a re-fetch; an invented section number is not."
+}
