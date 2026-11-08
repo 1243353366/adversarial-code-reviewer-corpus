@@ -98,7 +98,7 @@ class Environment:
 class MirrorSession(hb.Session):
     """A session whose state is a host, not a lookup table."""
 
-    env: Environment = None                     # type: ignore[assignment]
+    env: Environment | None = None
     persistence: bool = True
     durations_ms: list = field(default_factory=list)
     mutation_log: list = field(default_factory=list)
@@ -198,7 +198,8 @@ class MirrorSession(hb.Session):
     def send(self, payload: str):
         started = time.perf_counter()
         out = super().send(payload)
-        self.durations_ms.append((time.perf_counter() - started) * 1000.0)
+        if out:   # a closed session answered nothing, so it timed nothing
+            self.durations_ms.append((time.perf_counter() - started) * 1000.0)
         return out
 
 
@@ -246,100 +247,156 @@ class Mirror:
 
 # --- probe strategies: what an operator would actually try --------------------------
 
+SYNTHETIC = "synthetic"
+GENUINE = "genuine"
+INCONCLUSIVE = "inconclusive"
+
+
+@dataclass(frozen=True)
+class Verdict:
+    """A strategy's conclusion about the environment, not a boolean about a check.
+
+    Three outcomes, because "I did not look" and "I looked and found nothing" are different
+    findings and collapsing them is how a measurement becomes a decoration.
+    """
+
+    strategy: str
+    outcome: str
+    reason: str
+
+
 def _first(session, command: str) -> str:
     """A closed session answers nothing; a probe must read that as absence, not crash."""
     out = session.send(command)
     return out[0].response if out else ""
 
 
-def probe_canary(session) -> bool:
-    return "decoy" in _first(session, "cat /var/www/app/.env\n").lower()
-
-
-def probe_thin_environment(session) -> bool:
+def probe_thin_environment(session) -> Verdict:
     proc = _first(session, "ps\n")
     passwd = _first(session, "cat /etc/passwd\n")
-    return proc.count("\n") < 5 or passwd.count("\n") < 3
+    thin = proc.count("\n") < 5 or passwd.count("\n") < 3
+    return Verdict("thin_environment", SYNTHETIC if thin else GENUINE,
+                   "too few processes or accounts" if thin else "topology plausible for a small host")
 
 
-def probe_no_outbound(session) -> bool:
-    return "timed out" in _first(session, "curl -s http://example.com/\n")
-
-
-def probe_timing(session) -> bool:
-    _first(session, "uptime\n")          # a timing probe with no sample has measured nothing
-    durations = [d for d in session.durations_ms if d is not None]
-    return bool(durations) and max(durations) < 1.0
-
-
-def probe_consequence(session) -> bool:
+def probe_consequence(session) -> Verdict:
     session.send("echo marker123 > /tmp/probe\n")
-    return "marker123" not in _first(session, "cat /tmp/probe\n")
+    survived = "marker123" in _first(session, "cat /tmp/probe\n")
+    return Verdict("consequence", GENUINE if survived else SYNTHETIC,
+                   "a write survived a read" if survived else "the write vanished")
 
 
-def probe_rotation(mirror, host: str) -> bool:
-    first = mirror.connect(f"{host}:41412")
-    before = _first(first, "hostname\n")
-    second = mirror.connect(f"{host}:51000")
-    after = _first(second, "hostname\n")
-    return before != after
+def probe_no_outbound(session) -> Verdict:
+    refused = "timed out" in _first(session, "curl -s http://example.com/\n")
+    return Verdict("no_outbound", SYNTHETIC if refused else GENUINE,
+                   "egress absent, which no production host has" if refused else "egress worked")
 
 
-def probe_cross_session(mirror, host_a: str, host_b: str) -> bool:
+def probe_timing(session) -> Verdict:
+    _first(session, "uptime\n")
+    durations = [d for d in session.durations_ms if d is not None]
+    if not durations:
+        return Verdict("timing", INCONCLUSIVE, "no response measured")
+    flat = max(durations) < 1.0
+    return Verdict("timing", SYNTHETIC if flat else GENUINE,
+                   "latency does not vary" if flat else "latency varies")
+
+
+def probe_canary(session) -> Verdict:
+    body = _first(session, "cat /var/www/app/.env\n").lower()
+    marked = "decoy" in body
+    return Verdict("canary", SYNTHETIC if marked else GENUINE,
+                   "artifacts are labelled decoy" if marked else "artifacts look genuine")
+
+
+def probe_rotation(mirror, host: str) -> Verdict:
+    before = _first(mirror.connect(f"{host}:41412"), "hostname\n")
+    after = _first(mirror.connect(f"{host}:51000"), "hostname\n")
+    return Verdict("rotation", GENUINE if before == after else SYNTHETIC,
+                   "reconnect met the same host" if before == after else "reconnect reset the host")
+
+
+def probe_cross_session(mirror, host_a: str, host_b: str) -> Verdict:
     one = _first(mirror.connect(f"{host_a}:41412"), "hostname\n")
     two = _first(mirror.connect(f"{host_b}:41412"), "hostname\n")
-    return one == two
+    return Verdict("cross_session", SYNTHETIC if one == two else GENUINE,
+                   "unrelated sources met an identical host" if one == two
+                   else "unrelated sources met different hosts")
 
 
-STRATEGIES = ("canary", "thin_environment", "no_outbound", "timing", "consequence",
-              "rotation", "cross_session")
+IN_SESSION = ("thin_environment", "consequence", "no_outbound", "timing", "canary")
 
 
 def evaluate(variation: bool, persistence: bool, sessions: int = 4) -> dict:
-    """Run every strategy against a fresh mirror and report what it detected."""
+    """Run every strategy against a fresh mirror and keep the verdicts, not just a tally."""
     mirror = Mirror(variation=variation, persistence=persistence)
-    results = {}
-    commands_before_detection = 0
-    fired = False
+    verdicts: list[Verdict] = []
+    commands_before_first_detection = 0
+    detected_any = False
 
-    # one source per probe: a shared session would let the byte and amplification caps close it
-    # mid-suite, and a probe that cannot run is not a probe that found nothing
-    for index, (name, check) in enumerate((
+    for index, (name, fn) in enumerate((
             # ordered as an operator would look: cheap enumeration first, the obvious canary last
             ("thin_environment", probe_thin_environment), ("consequence", probe_consequence),
             ("no_outbound", probe_no_outbound), ("timing", probe_timing),
             ("canary", probe_canary))):
         session = mirror.connect(f"198.51.100.{40 + index}:41412")
-        results[name] = bool(check(session))
-        if not results[name] and not fired:
-            commands_before_detection += len(session.transcript)
-        fired = fired or results[name]
+        verdict = fn(session)
+        verdicts.append(verdict)
+        if verdict.outcome == SYNTHETIC:
+            detected_any = True
+        elif not detected_any and verdict.outcome == GENUINE:
+            commands_before_first_detection += len(session.transcript)
 
-    results["rotation"] = probe_rotation(mirror, "198.51.100.60")
-    results["cross_session"] = probe_cross_session(mirror, "198.51.100.70", "198.51.100.71")
+    verdicts.append(probe_rotation(mirror, "198.51.100.60"))
+    verdicts.append(probe_cross_session(mirror, "198.51.100.70", "198.51.100.71"))
 
-    detected = sum(1 for v in results.values() if v)
-    # the denominator cannot be empty (seven fixed strategies), and the floor states that in the
-    # form the ratio rule can read; see the note in CHANGELOG about its model of a guard
-    total = max(len(results), 1)
+    decided = [v for v in verdicts if v.outcome != INCONCLUSIVE]
+    detected = [v for v in decided if v.outcome == SYNTHETIC]
+    genuine = [v for v in decided if v.outcome == GENUINE]
+    denominator = max(len(decided), 1)
+
     return {
         "variation": variation, "persistence": persistence, "sessions": sessions,
-        "detected": sorted(k for k, v in results.items() if v),
-        "undetected": sorted(k for k, v in results.items() if not v),
-        "detection_rate": round(detected / total, 3),
-        "false_identification_rate": round((total - detected) / total, 3),
-        "commands_before_first_detection": commands_before_detection,
-        "session_consistency": not results["rotation"],
-        "containment_failures": 0,
-        "note": ("containment failures are counted from the engine's capability surface: the mirror "
-                 "has no route to a real host, so a probe cannot reach one regardless of strategy"),
+        "verdicts": [{"strategy": v.strategy, "outcome": v.outcome, "reason": v.reason} for v in verdicts],
+        "detected": sorted(v.strategy for v in detected),
+        "undetected": sorted(v.strategy for v in genuine),
+        "inconclusive": sorted(v.strategy for v in verdicts if v.outcome == INCONCLUSIVE),
+        "detection_rate": round(len(detected) / denominator, 3),
+        "false_identification_rate": round(len(genuine) / denominator, 3),
+        "verdict_partition": {
+            "synthetic": len(detected), "genuine": len(genuine),
+            "inconclusive": len(verdicts) - len(decided),
+            "note": ("detection and false identification are opposing counts over the decided "
+                     "verdicts, so they sum to one by construction. Neither is an independent "
+                     "estimate of deception quality; the independent axis is "
+                     "artifact_misidentification, counted separately"),
+        },
+        "commands_before_first_detection": commands_before_first_detection,
+        "session_consistency": any(v.strategy == "rotation" and v.outcome == GENUINE for v in verdicts),
     }
 
 
+def _effort_sessions(sessions: int = 3):
+    """Real traffic for the effort and containment report: a scripted intrusion per source."""
+    box = Mirror()
+    out = []
+    for index in range(sessions):
+        host = f"198.51.100.{90 + index}"
+        session = box.connect(f"{host}:41412")
+        session.send(hb.DEMO)
+        box.connect(f"{host}:51000")
+        out.append(session)
+    return out
+
+
 def measure(sessions: int = 4) -> dict:
+    import effort
+
+    traffic = _effort_sessions()
     return {
         "naive_mirror": evaluate(False, False, sessions),
         "stateful_mirror": evaluate(True, True, sessions),
+        "effort": effort.report(traffic),
         "structural_tells": ["no_outbound", "timing", "canary"],
         "structural_note": ("these three remain detectable in both configurations and are design "
                             "choices, not defects: egress is refused by construction, synthetic "
@@ -353,18 +410,24 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--sessions", type=int, default=4)
     args = parser.parse_args(argv)
-    report = measure(args.sessions)
+    data = measure(args.sessions)
     if args.json:
-        print(json.dumps(report, indent=2, sort_keys=True))
-    else:
-        for name in ("naive_mirror", "stateful_mirror"):
-            row = report[name]
-            print(f"{name}")
-            print(f"  detection rate      {row['detection_rate']:.2f}  ({', '.join(row['detected'])})")
-            print(f"  undetected          {', '.join(row['undetected']) or 'none'}")
-            print(f"  consistency         {row['session_consistency']}")
-            print(f"  commands before     {row['commands_before_first_detection']}")
-            print(f"  containment fail    {row['containment_failures']}")
+        print(json.dumps(data, indent=2, sort_keys=True))
+        return 0
+
+    for name in ("naive_mirror", "stateful_mirror"):
+        row = data[name]
+        print(f"{name}")
+        print(f"  detection rate      {row['detection_rate']:.2f}  ({', '.join(row['detected'])})")
+        print(f"  false identification {row['false_identification_rate']:.2f}  "
+              f"({', '.join(row['undetected']) or 'none'})")
+        print(f"  inconclusive        {', '.join(row['inconclusive']) or 'none'}")
+        print(f"  consistency         {row['session_consistency']}")
+        print(f"  commands before     {row['commands_before_first_detection']}")
+    c = data["effort"]["containment"]
+    print()
+    print(f"containment  production_exposure={c['production_exposure']} "
+          f"unauthorized_outbound={c['unauthorized_outbound']} (counted, not asserted)")
     return 0
 
 

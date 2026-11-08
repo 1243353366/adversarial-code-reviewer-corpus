@@ -83,6 +83,17 @@ Repro ids `R01`–`R20` are defined in `tools/repro.py`.
 
 ## Acquisitions
 
+**Method: the counters had to be able to fail.** Three defects in the deception harness, all of the same species: a number that looked like a measurement and was not. `containment_failures: 0` was a literal in the source with a test asserting the literal, which is a decoration with a witness. `assert "bash" not in s.attempt_profile or True` could never fail. And detection rate was presented alongside false identification rate as two findings when the second was the arithmetic complement of the first.
+
+`harness/deception/effort.py` replaces the literal with an audit: every module in the package is parsed, its imports and its builtin `open` call sites are read, and `production_exposure` and `unauthorized_outbound` are counted from what it finds. The tests plant a module importing `socket` and `subprocess` and one calling `open('/etc/passwd')` and require the counters to move, so a zero from the real package means the audit looked rather than that the source says zero. `effort.py` excludes itself from its own audit, and a test asserts the exclusion is visible.
+
+The independent axis is `artifact_misidentification`: a decoy is misidentified when its content carries no marker, so the count is zero for our marked decoys and non-zero the moment an unmarked one is served. That test plants one. It answers the Lupin question the partition could not: whether a meaningful artifact was confused with a decoy, rather than whether the environment was spotted.
+
+Metric algebra is now stated rather than implied: the verdict partition declares that detection and false identification sum to one over decided probes and that neither is an independent estimate. Probes return `synthetic`, `genuine` or `inconclusive` instead of a boolean, because "I did not measure" and "I measured and found nothing" were collapsing into each other, which is the same collapse that produced the earlier `no invariant was violated` bug.
+
+Attacker effort and defensive benefit are separate records. Dwell time is measured and labelled a floor on operator attention, not a cost, with the caveat in the record: a patient operator can spend an hour here at no cost to himself. Syntax cleanup alongside: a conditional expression used as a statement (which had already caused a real bug), `# type: ignore` on a field default, unused imports, and a probability triple that printed without padding.
+
+
 **Method: the mirror is measured, not asserted.** `harness/deception/mirror.py` replaces a command table with a host: generated users, processes, services, uptime, load and disk, deterministic per source so a reconnect on another port meets the same machine, with writes that persist inside the session (`echo x > f && cat f` works, `rm` removes). Two configurations are measured against seven probe strategies drawn from what an operator actually tries: canary, thin environment, absent egress, flat timing, missing consequences, rotation resetting state, and identical environments across unrelated sources.
 
 Numbers, which are the point: a naive mirror is identified by 5 of 7 strategies (0.71). Per-session variation plus persistence brings it to 3 of 7 (0.43). What survives is disclosed rather than smoothed over: decoys are labelled decoy so no real credential is ever planted, egress is refused by construction, and synthetic responses do not vary in latency. Believability is traded for safety on purpose, and the trade is reported.

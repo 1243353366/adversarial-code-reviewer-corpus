@@ -36,7 +36,7 @@ import json
 import random
 import sys
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from pathlib import Path
 
 # Deliberately absent: socket, subprocess, urllib, requests, os.system, shutil, pathlib.open.
@@ -140,6 +140,11 @@ class Session:
     endpoints: list[str] = field(default_factory=list)
 
     # --- limits -----------------------------------------------------------------
+
+    @property
+    def elapsed(self) -> float:
+        """Wall time this session has existed, which is the only cost proxy the sinkhole owns."""
+        return time.monotonic() - self.started
 
     def _amplification(self) -> float | None:
         """Outbound bytes per inbound byte, or None before anything arrives.
