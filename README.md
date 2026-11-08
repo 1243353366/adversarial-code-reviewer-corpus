@@ -46,7 +46,7 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 ```
 python tools/validate_corpus.py   # 17 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 219 tests: validators, attacks, hostile peers, deception
+pytest -q                         # 235 tests: validators, attacks, hostile peers, deception
 python tools/repro.py --check     # 58 defects: each reproduces on its historical state, then stays caught
 ```
 
@@ -93,7 +93,9 @@ The degenerate case is the whole point. An empty request is the cheapest thing t
 
 `tools/self_review.py` applies the catalogue's own rules back to the modules that do the cataloguing: peer authority read from payload, wire length used as an allocation size, unbounded queue, mutable default, bare except, identity compared to a string, unfloored ratio, and thresholds living outside a policy file. It runs in CI on every push.
 
-Exemptions live in `harness/self_review_allow.txt` and each one carries a written reason; an entry without one refuses to load. Three exemptions exist today, all for the naive listener fixtures and for the line that reads a peer's claimed origin in order to record it as a forgery.
+The analysis is intraprocedural and path-insensitive. It follows assignments, tuple unpacking, conversions and arithmetic inside one function, treats a clamp or a comparison against a threshold as bounding, and is blind to values travelling through containers, attributes or returns. A clean run means none of the eight rules saw a defect, not that there is none.
+
+Exemptions live in `harness/self_review_allow.txt`, keyed `path:rule:fingerprint` so that one exemption covers one occurrence. Each carries a written reason, and an entry that matches nothing or more than one finding fails the run. Four exemptions exist today: two naive-listener fixtures, and the two reads of a claimed origin in `listener.py` that look identical to a rule and are opposite in intent.
 
 Current output: 0 high findings, 3 low. The low ones are real and unfixed: `MAX_HOPS`, `MAX_WALL_SECONDS` and `MAX_FRAMES_PER_CONNECTION` are policy that no single file declares.
 

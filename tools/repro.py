@@ -793,6 +793,80 @@ def _rec(kind: str):
     return check
 
 
+# --- self-review rule efficacy -----------------------------------------------------
+
+import self_review as _SR  # noqa: E402
+
+
+def _sr_case(kind: str):
+    def check(naive: bool) -> list[str]:
+        import ast as _ast
+
+        def findings(code, path="harness/x.py"):
+            tree = _ast.parse(code)
+            lines = code.splitlines()
+            out = []
+            for rule in _SR.RULES:
+                for f in rule(tree, path):
+                    out.append(_SR.Finding(f.path, f.line, f.rule, f.severity, f.why,
+                                           _SR.fingerprint_of(lines[f.line - 1])))
+            return out
+
+        if kind == "exemption_breadth":
+            code = ("import struct\n"
+                    "def f(peer):\n"
+                    "    (n,) = struct.unpack('>I', peer.read_exact(4))\n"
+                    "    return peer.read_exact(n)\n"
+                    "def g(peer):\n"
+                    "    (m,) = struct.unpack('>I', peer.read_exact(4))\n"
+                    "    return peer.read_exact(m)\n")
+            found = findings(code)
+            line = code.splitlines()[3]
+            allowed = {("harness/x.py", "peer_length_before_bound", _SR.fingerprint_of(line)): "one of two"}
+            if naive:
+                kept = [f for f in found if (f.path, f.rule) not in allowed]
+                return [] if len(kept) != len(found) else ["defect reproduced: one exemption silenced the whole file"]
+            kept = _SR.apply_allowlist(found, allowed)
+            return [] if len(kept) == 1 else [f"expected 1 remaining finding, got {len(kept)}"]
+
+        if kind == "scope_leak":
+            code = ("def safe(numerator, request_size):\n"
+                    "    denominator = max(request_size, 1)\n"
+                    "    return numerator / denominator\n"
+                    "\n"
+                    "def unsafe(numerator, denominator):\n"
+                    "    return numerator / denominator\n")
+            found = findings(code)
+            if naive:
+                return [] if not found else ["defect reproduced: unfloored division escaped detection"]
+            return [] if [f.line for f in found] == [6] else [f"expected only line 6, got {[f.line for f in found]}"]
+
+        if kind == "length_alias":
+            code = ("import struct\n"
+                    "def f(peer):\n"
+                    "    (declared,) = struct.unpack('>I', peer.read_exact(4))\n"
+                    "    size = int(declared)\n"
+                    "    return peer.read_exact(size)\n")
+            found = findings(code)
+            if naive:
+                return [] if not found else ["defect reproduced: an unbounded size hidden behind int() was accepted"]
+            return [] if found else ["guard missed the alias"]
+
+        if kind == "stale_exemption":
+            allowed = {("harness/x.py", "peer_length_before_bound", "deadbeef"): "matches nothing at all"}
+            if naive:
+                return ["defect reproduced: a stale exemption was accepted silently"]
+            try:
+                _SR.apply_allowlist([], allowed)
+            except SystemExit:
+                return []
+            return ["guard accepted a stale exemption"]
+
+        return ["unknown case"]
+
+    return check
+
+
 REGISTRY: list[Repro] = [
     Repro("R01", "D3 acceptance status asserted without its basis",
           "a README line claiming TOSEM acceptance",
@@ -1007,6 +1081,14 @@ REGISTRY: list[Repro] = [
           "a single round of clean checks", _rec("single_round"), _naive_flag, _hardened_flag),
     Repro("R58", "session inventory was read through the host under test",
           "an in-band inventory reporting itself complete", _rec("in_band_inventory"), _naive_flag, _hardened_flag),
+    Repro("R59", "one exemption silenced every occurrence of its rule in the file",
+          "two unbounded reads, one exemption", _sr_case("exemption_breadth"), _naive_flag, _hardened_flag),
+    Repro("R60", "a denominator floor leaked across function scopes",
+          "the reviewer's safe()/unsafe() pair", _sr_case("scope_leak"), _naive_flag, _hardened_flag),
+    Repro("R61", "a wire length hidden behind int() escaped the size rule",
+          "declared -> size = int(declared) -> read_exact(size)", _sr_case("length_alias"), _naive_flag, _hardened_flag),
+    Repro("R62", "a stale exemption was accepted without complaint",
+          "an exemption matching no finding", _sr_case("stale_exemption"), _naive_flag, _hardened_flag),
 ]
 
 

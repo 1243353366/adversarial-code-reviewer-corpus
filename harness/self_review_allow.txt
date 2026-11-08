@@ -1,5 +1,11 @@
-# Exemptions require a written reason. An exemption without one is a suppression, and
-# tools/self_review.py refuses to load an entry that has none.
-harness/untrusted_peer/naive.py:peer_length_before_bound  # fixture by design: unbounded allocation is the defect it exists to demonstrate
-harness/untrusted_peer/naive.py:peer_authority_from_payload  # same fixture; adopting the peer's stated role is the point of the file
-harness/provenance/listener.py:peer_authority_from_payload  # reads the claimed origin only to record it as a forgery, never to decide trust
+# Exemptions are occurrence-specific: path:rule:fingerprint, where the fingerprint hashes
+# the exact source line. An entry must match exactly one finding; stale and ambiguous
+# entries fail the run. Every entry carries a reason, and no reason is a suppression.
+#
+# One read of a peer field is not another. These four entries exist because two classes in
+# listener.py both read the claimed origin for opposite purposes, and the naive fixtures
+# exist to be wrong.
+harness/untrusted_peer/naive.py:peer_length_before_bound:a69f610d  # fixture by design: the peer chooses the allocation size, that is the defect demonstrated
+harness/untrusted_peer/naive.py:peer_authority_from_payload:5c722bc3  # same fixture: adopting the peer's asserted role is the point of the file
+harness/provenance/listener.py:peer_authority_from_payload:7819b6f8  # NaiveListener, the deliberately vulnerable class this module contrasts against
+harness/provenance/listener.py:peer_authority_from_payload:60f2f66d  # GuardedListener records the claimed origin as a forgery before overwriting it with the connection's
