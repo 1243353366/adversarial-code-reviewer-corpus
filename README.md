@@ -46,8 +46,8 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 ```
 python tools/validate_corpus.py   # 17 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 163 tests: validators, attacks, hostile peers, deception
-python tools/repro.py --check     # 46 defects: each reproduces on its historical state, then stays caught
+pytest -q                         # 182 tests: validators, attacks, hostile peers, deception
+python tools/repro.py --check     # 52 defects: each reproduces on its historical state, then stays caught
 ```
 
 Sixteen checks, not four. The later ones were added by attacking the validators themselves: six of them exist because a mutation got through the first version. The four mutations that still get through are written as passing tests, so the limits are visible in code rather than discovered in an incident. See [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md).
@@ -82,6 +82,12 @@ A rule the repository owner can bypass is not a rule, it is a preference. `enfor
 This is the same failure mode as the license paragraph and the fabricated citations, at the level of process instead of prose: something that looked like enforcement while being advisory. The pattern has now occurred five times in this project. It is the actual subject of the repository.
 
 The rule is enforced by the platform instead of by intention: a standard that lives in prose is a standard that has already been broken once.
+
+## Cost containment
+
+`harness/cost/containment.py` answers one question per connection: what did this interaction cost against what it asked for. Three ratios, bytes out over bytes in, CPU per request byte, outstanding frames per window. Escalation runs throttle, then quarantine with a fixed synthetic reply, then termination with a remembered denial, and a cheap sample buys back a strike so a burst cannot accumulate into a kill.
+
+The degenerate case is the whole point. An empty request is the cheapest thing to send and the most expensive to answer, so request size floors at one byte rather than dividing by zero; without the floor the ratio is NaN and NaN compares false against every limit, which is a silent bypass.
 
 ## Deception layer
 

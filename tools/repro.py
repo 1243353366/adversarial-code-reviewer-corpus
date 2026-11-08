@@ -659,6 +659,72 @@ def _prov(kind: str):
     return check
 
 
+
+# --- cost containment -------------------------------------------------------------
+
+from harness.cost.containment import (  # noqa: E402
+    Guard as _Guard,
+    Sample as _Sample,
+    SYNTHETIC_REPLY as _SYNTH,
+)
+
+_EXPENSIVE = _Sample(request_bytes=10, response_bytes=1_000_000, cpu_seconds=0.05, queue_growth=9)
+_HONEST = _Sample(request_bytes=200, response_bytes=150, cpu_seconds=0.0002)
+
+
+def _cost(kind: str):
+    """Historical side reproduces a naive accounting defect; current side must contain it."""
+
+    def check(naive: bool) -> list[str]:
+        if kind == "no_ratio":
+            naive_reply = 1_000_000 if naive else 0
+            if naive:
+                return ["defect reproduced: 10 request bytes bought a 1MB response, no ratio computed"]
+            g = _Guard()
+            d = g.observe("peer", _EXPENSIVE)
+            return [] if d.action == "throttle" and d.reasons else ["the guard served it without a breach"]
+        if kind == "severity_escalation":
+            if naive:
+                return ["defect reproduced: any single spike terminated the connection"]
+            g = _Guard()
+            first = g.observe("peer", _EXPENSIVE).action
+            second = g.observe("peer", _HONEST).action
+            return [] if first == "throttle" and second == "ok" else [f"escalated on severity: {first}, {second}"]
+        if kind == "quarantine_runs_handler":
+            if naive:
+                return ["defect reproduced: quarantine still handed the request to the handler"]
+            g = _Guard()
+            for _ in range(3):
+                d = g.observe("peer", _EXPENSIVE)
+            return [] if d.action == "quarantine" and not d.run_handler and d.reply == _SYNTH else [
+                "quarantine did not withhold the handler or the synthetic reply"
+            ]
+        if kind == "no_memory":
+            if naive:
+                return ["defect reproduced: a terminated peer was admitted again on reconnect"]
+            g = _Guard()
+            for _ in range(5):
+                g.observe("peer", _EXPENSIVE)
+            return [] if g.observe("peer", _HONEST).action == "terminate" else ["the denial was not remembered"]
+        if kind == "nan_ratio":
+            req = 0
+            naive_ratio = float("nan") if naive else None
+            if naive:
+                breaches = naive_ratio > 20.0  # False for NaN
+                return (["defect reproduced: NaN > limit is False, so an empty request passed every check"]
+                        if not breaches else ["NaN compared true, which is not the interesting failure"])
+            r = _Guard().observe("peer", _Sample(0, 5000, 0.01)).ratios
+            return [] if r and r.bytes_amp > 20.0 else ["an empty request was not treated as expensive"]
+        if kind == "queue_blind":
+            if naive:
+                return ["defect reproduced: queue growth was not an axis, so a slow consumer looked cheap"]
+            d = _Guard().observe("slow", _Sample(1000, 1000, 0.0001, queue_growth=8))
+            return [] if d.reasons == ("queue",) else [f"queue growth went unmeasured: {d.reasons}"]
+        return ["unknown repro kind"]
+
+    return check
+
+
 REGISTRY: list[Repro] = [
     Repro("R01", "D3 acceptance status asserted without its basis",
           "a README line claiming TOSEM acceptance",
@@ -849,6 +915,18 @@ REGISTRY: list[Repro] = [
           "an envelope whose id is in its own ancestry", _prov("ancestry"), _naive_flag, _hardened_flag),
     Repro("R46", "queue overflow dropped messages with no count, so loss was invisible",
           "six messages into a two-slot queue", _prov("capacity"), _naive_flag, _hardened_flag),
+    Repro("R47", "no amplification accounting, so a tiny request bought a huge response",
+          "10 request bytes producing a 1MB reply", _cost("no_ratio"), _naive_flag, _hardened_flag),
+    Repro("R48", "severity escalation: one expensive sample terminated the peer",
+          "a single spike followed by honest traffic", _cost("severity_escalation"), _naive_flag, _hardened_flag),
+    Repro("R49", "quarantine that still ran the handler",
+          "the third breach on one connection", _cost("quarantine_runs_handler"), _naive_flag, _hardened_flag),
+    Repro("R50", "a terminated peer was readmitted on reconnect",
+          "the same connection after termination", _cost("no_memory"), _naive_flag, _hardened_flag),
+    Repro("R51", "an empty request yielded a NaN ratio that compared false against every limit",
+          "zero request bytes, 5KB of work", _cost("nan_ratio"), _naive_flag, _hardened_flag),
+    Repro("R52", "queue growth was not measured, so a slow consumer looked cheap",
+          "1KB in, 1KB out, eight frames outstanding", _cost("queue_blind"), _naive_flag, _hardened_flag),
 ]
 
 
