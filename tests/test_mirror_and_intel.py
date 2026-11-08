@@ -11,14 +11,11 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parent.parent
 DEC = ROOT / "harness" / "deception"
 sys.path.insert(0, str(DEC))
 
 import aws_intel as ai  # noqa: E402
-import hellbox as hb  # noqa: E402
 import mirror as mx  # noqa: E402
 
 
@@ -83,7 +80,7 @@ def test_measurement_reports_both_configurations_with_the_required_fields():
     for key in ("naive_mirror", "stateful_mirror"):
         row = report[key]
         for field in ("detection_rate", "false_identification_rate", "commands_before_first_detection",
-                      "session_consistency", "containment_failures", "detected", "undetected"):
+                      "session_consistency", "verdict_partition", "inconclusive", "detected", "undetected"):
             assert field in row, (key, field)
 
 
@@ -99,7 +96,8 @@ def test_the_surviving_tells_are_named_rather_than_hidden():
     disclosed = set(report["structural_tells"])
     assert {"canary", "no_outbound", "timing"} <= disclosed
     assert disclosed <= set(report["stateful_mirror"]["detected"])
-    assert report["stateful_mirror"]["containment_failures"] == 0
+    # containment is a counted audit, not a literal in the row
+    assert report["effort"]["containment"]["production_exposure"] == 0
 
 
 def test_continuity_within_a_session_is_preserved():

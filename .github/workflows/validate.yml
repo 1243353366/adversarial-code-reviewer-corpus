@@ -27,6 +27,9 @@ jobs:
           python harness/deception/mirror.py > /dev/null
           python harness/deception/aws_intel.py > /dev/null
 
+      - name: attacker effort and counted zero targets
+        run: python harness/deception/effort.py > /dev/null
+
       - name: Tests
         run: pytest -q
 
