@@ -17,6 +17,24 @@
       "artifact_bytes": 399717,
       "what_was_kept": "quotes and their offsets only; the retrieved body is not stored, per check_no_document_bodies",
       "reverify": "curl -sL https://arxiv.org/html/2508.04448v1 | sha256sum"
+    },
+    "D7-2026-11-08-pdf": {
+      "document_id": "D7",
+      "url": "https://arxiv.org/pdf/2403.02546v1",
+      "retrieved_at": "2026-11-08T18:05Z",
+      "artifact_sha256": "ff6622c32f4ad09cc1269e64481e526027334e0133823abe6d4b756e8fb5661b",
+      "artifact_bytes": 1693619,
+      "what_was_kept": "three verbatim quotes and their character offsets; no body text stored",
+      "reverify": "curl -sL https://arxiv.org/pdf/2403.02546v1 | sha256sum"
+    },
+    "D6-2026-11-08-index": {
+      "document_id": "D6",
+      "url": "https://malpedia.caad.fkie.fraunhofer.de/families",
+      "retrieved_at": "2026-11-08T18:03Z",
+      "artifact_sha256": "b2fdbf6f324271c827aa56685425d0aaaa1fb45213c7701268f4558848259109",
+      "artifact_bytes": 388988,
+      "what_was_kept": "index retrieved and read; no entry text reproduced",
+      "reverify": "curl -sL https://malpedia.caad.fkie.fraunhofer.de/families | sha256sum"
     }
   },
   "note": "Offsets are character offsets into the whitespace-normalized text of the retrieval. A quote plus an offset plus an artifact hash is checkable by a second party after a re-fetch; an invented section number is not."

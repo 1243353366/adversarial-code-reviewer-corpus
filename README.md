@@ -18,6 +18,7 @@ This repository contains **analysis, metadata and citations only**. It does not 
 | [`corpus/out/07-remediation-log.md`](corpus/out/07-remediation-log.md) | Response to a second review: ten findings triaged, schema and validators added, spec amended |
 | [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md) | Attack on the validators: six checks added, four blind spots admitted as tests |
 | [`corpus/out/09-oracle-and-pilot-defects.md`](corpus/out/09-oracle-and-pilot-defects.md) | What counts as an oracle, and the pilot the plan was missing |
+| [`corpus/out/11-acquisition-batch-2.md`](corpus/out/11-acquisition-batch-2.md) | Second acquisition batch: two admitted, two refused, and why |
 | [`corpus/out/10-harness-metric-defects.md`](corpus/out/10-harness-metric-defects.md) | Three metric defects: a pilot too small to stratify, unrequired verdicts, a circular fabrication rate |
 | [`CHANGELOG.md`](CHANGELOG.md) | Every defect with its reproduction, regression test and method justification |
 | [`corpus/out/claims.json`](corpus/out/claims.json) | Claim-level manifest with locators, evidence class and permitted downstream uses |
@@ -33,6 +34,10 @@ This repository contains **analysis, metadata and citations only**. It does not 
 | D3 | LLMs Versus Static Code Analysis Tools: A Systematic Benchmark | [arXiv:2508.04448](https://arxiv.org/abs/2508.04448) | Unreviewed preprint |
 | D4 | Outside the Comfort Zone | [arXiv:2408.16400](https://arxiv.org/abs/2408.16400) | Manuscript-asserted (ESORICS 2024) |
 | D5 | Vulnerability Detection and Repair: Literature Review | [arXiv:2404.02525](https://arxiv.org/abs/2404.02525) | Secondary source (TOSEM) |
+| D6 | Malpedia: family and actor database | [malpedia.caad.fkie.fraunhofer.de/families](https://malpedia.caad.fkie.fraunhofer.de/families) | Unreviewed (database) |
+| D7 | Catch'em all: rare, prominent and novel malware families | [arXiv:2403.02546](https://arxiv.org/abs/2403.02546) | Manuscript-asserted (ISDFS 2024) |
+
+Two further sources were examined and refused, each with its reason and retrieval attempts recorded under `rejected_sources` in [`research-metadata.json`](corpus/out/research-metadata.json): an unattributable malware index with no named author and no license, and a Medium article that returned 403 to two independent retrieval routes and was therefore never seen. Nothing is asserted about the contents of either.
 
 ## Checks
 
@@ -40,7 +45,7 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 
 ```
-python tools/validate_corpus.py   # 16 checks: schema, provenance, evidence gates, licensing, counts, docs
+python tools/validate_corpus.py   # 17 checks: schema, provenance, evidence gates, licensing, counts, docs
 pytest -q                         # 88 tests: negative cases, adversarial attacks, admitted blind spots
 python tools/repro.py --check     # 23 defects: each reproduces on its historical state, then stays caught
 ```

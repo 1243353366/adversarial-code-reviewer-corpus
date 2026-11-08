@@ -13,6 +13,10 @@ Checked 2026-11-06 against arXiv abstract pages, the arXiv API (`corpus/api.xml`
 | D3 | 2508.04448 | v1 only | **None.** Preprint; manuscript refers to itself as a thesis | None | CC BY-SA 4.0 | Yes, with conditions |
 | D4 | 2408.16400 | v1 only | ESORICS 2024 | Unresolved | arXiv non-exclusive distribution | No |
 | D5 | 2404.02525 | v1 2024-04-03; v2 2024-10-07 | TOSEM, May 2025 | Unresolved | arXiv non-exclusive distribution | No |
+| D6 | n/a | live index, retrieved 2026-11-08 | None: curated database, no review process | None | No license found on any reachable page | No |
+| D7 | 2403.02546 | v1 2024-03-04 | ISDFS 2024 per arXiv comment | Unresolved | arXiv non-exclusive distribution | No |
+
+Two sources in the second batch were refused and are listed under `rejected_sources` in the metadata: an unattributable index (no author, no license) and a Medium article that returned 403 through two routes. A refusal is recorded with its attempts, because "we could not get it" and "we decided against it" are different claims and both are checkable.
 
 ---
 
