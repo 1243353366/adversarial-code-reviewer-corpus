@@ -19,6 +19,9 @@ jobs:
         run: python tools/validate_corpus.py
       - name: Review our own code with the catalogue's rules
         run: python tools/self_review.py
+      - name: sinkhole answers a scripted intrusion
+        run: python harness/deception/hellbox.py > /dev/null
+
       - name: Tests
         run: pytest -q
 
