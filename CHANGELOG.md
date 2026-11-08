@@ -76,6 +76,10 @@ Repro ids `R01`–`R20` are defined in `tools/repro.py`.
 
 ## Acquisitions
 
+**Method: the catalogue is now enforced on its own authors.** `tools/self_review.py` turns eight of the recorded defect classes into AST rules and runs them over `harness/` and `tools/` on every push. Justification for the shape: an exemption needs a written reason in `harness/self_review_allow.txt` or the loader refuses, because a suppression without a reason is the failure mode the corpus keeps documenting. Two rules are scoped deliberately, not for convenience: the ratio rule skips authoring scripts, which compute over their own lists rather than peer input, and the threshold rule reports only numbers whose names look like policy.
+
+The first run found eleven high findings. Three were the intended fixtures, one was forgery detection reading a peer's claim in order to log it, and seven came from the ratio rule firing on report arithmetic. The scoping above resolved the seven; the four remaining are exempted with reasons rather than silenced. Three low findings stand unfixed and are the policy centralization the architecture still owes: `MAX_HOPS`, `MAX_WALL_SECONDS`, `MAX_FRAMES_PER_CONNECTION`.
+
 **Method: mutation checks for the review's guards.** `tools/mutation_check.py` reverts each guard and confirms the test fails without it. Eight of nine guards are currently isolated by a test; the four that are not share fixtures where a second guard fires first, so a disabled guard leaves the suite green. The tool prints the shortfall rather than rounding it up, because a proof of coverage that skips the unproven cases is the same defect this repository keeps finding.
 
 Changes to what the corpus contains, with the reason each decision was made. These are not defect fixes, so they carry no repro; the acquisition record with retrieval hashes is in [corpus/out/11-acquisition-batch-2.md](corpus/out/11-acquisition-batch-2.md).
