@@ -30,6 +30,9 @@ jobs:
       - name: attacker effort and counted zero targets
         run: python harness/deception/effort.py > /dev/null
 
+      - name: hardware trust reports three axes
+        run: python harness/hardware/trust.py > /dev/null
+
       - name: Tests
         run: pytest -q
 
