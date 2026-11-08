@@ -1,0 +1,5 @@
+# Exemptions require a written reason. An exemption without one is a suppression, and
+# tools/self_review.py refuses to load an entry that has none.
+harness/untrusted_peer/naive.py:peer_length_before_bound  # fixture by design: unbounded allocation is the defect it exists to demonstrate
+harness/untrusted_peer/naive.py:peer_authority_from_payload  # same fixture; adopting the peer's stated role is the point of the file
+harness/provenance/listener.py:peer_authority_from_payload  # reads the claimed origin only to record it as a forgery, never to decide trust

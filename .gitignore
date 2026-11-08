@@ -1,6 +1,7 @@
 # Retrieved full texts are NOT redistributable (arXiv non-exclusive distribution license).
 *.pdf
 *.txt
+!harness/self_review_allow.txt
 *.html
 api.xml
 
