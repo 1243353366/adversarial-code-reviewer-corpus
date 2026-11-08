@@ -48,7 +48,7 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 ```
 python tools/validate_corpus.py   # 17 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 324 tests: validators, attacks, hostile peers, deception
+pytest -q                         # 344 tests: validators, attacks, hostile peers, deception
 python tools/repro.py --check     # 58 defects: each reproduces on its historical state, then stays caught
 ```
 
