@@ -798,6 +798,47 @@ def _rec(kind: str):
 import self_review as _SR  # noqa: E402
 
 
+
+def _old_size_scan(code: str) -> list[int]:
+    """The pre-R63 rule: any min()/max() in a size expression counted as an upper bound."""
+    import ast
+    import self_review as _S
+
+    tree = ast.parse(code)
+    hits = []
+    for scope in _S._scopes(tree):
+        tainted, _ = _S._taint_analysis(scope)
+        for node in _S._scope_nodes(scope):
+            if not isinstance(node, ast.Call) or not node.args:
+                continue
+            if _S._call_name(node) not in _S.SIZE_CALLS:
+                continue
+            expr = node.args[0]
+            if any(isinstance(x, ast.Call) and _S._call_name(x) in ("min", "max") for x in ast.walk(expr)):
+                continue
+            if {x.id for x in ast.walk(expr) if isinstance(x, ast.Name)} & tainted:
+                hits.append(node.lineno)
+    return hits
+
+
+def _old_compare_bounds(code: str) -> bool:
+    """The pre-R64 rule: any comparison against a limit was credited as a bound."""
+    import ast
+    import self_review as _S
+
+    tree = ast.parse(code)
+    for scope in _S._scopes(tree):
+        tainted, _ = _S._taint_analysis(scope)
+        for node in _S._scope_nodes(scope):
+            if not isinstance(node, ast.Compare):
+                continue
+            sides = [node.left, *node.comparators]
+            for a, b in zip(sides, sides[1:]):
+                if isinstance(a, ast.Name) and a.id in tainted and _S._is_limit(b):
+                    return True
+    return False
+
+
 def _sr_case(kind: str):
     def check(naive: bool) -> list[str]:
         import ast as _ast
@@ -861,6 +902,31 @@ def _sr_case(kind: str):
             except SystemExit:
                 return []
             return ["guard accepted a stale exemption"]
+
+
+        if kind == "max_as_ceiling":
+            code = ("import struct\n"
+                    "def f(peer):\n"
+                    "    (n,) = struct.unpack('>I', peer.read_exact(4))\n"
+                    "    size = max(n, 1)\n"
+                    "    return peer.read_exact(size)\n")
+            if naive:
+                return [] if not _old_size_scan(code) else ["old rule flagged it, repro invalid"]
+            return [] if findings(code) else ["guard accepted max() as an upper bound"]
+
+        if kind == "non_rejecting_compare":
+            code = ("import struct\n"
+                    "MAX_FRAME = 1024\n"
+                    "def f(peer):\n"
+                    "    (n,) = struct.unpack('>I', peer.read_exact(4))\n"
+                    "    if n < MAX_FRAME:\n"
+                    "        pass\n"
+                    "    return peer.read_exact(n)\n")
+            if naive:
+                return ["defect reproduced: a comparison with no rejection counted as a bound"] \
+                    if _old_compare_bounds(code) else ["old rule missed it, repro invalid"]
+            return [] if findings(code) else ["guard credited a comparison that rejects nothing"]
+
 
         return ["unknown case"]
 
@@ -1089,6 +1155,10 @@ REGISTRY: list[Repro] = [
           "declared -> size = int(declared) -> read_exact(size)", _sr_case("length_alias"), _naive_flag, _hardened_flag),
     Repro("R62", "a stale exemption was accepted without complaint",
           "an exemption matching no finding", _sr_case("stale_exemption"), _naive_flag, _hardened_flag),
+    Repro("R63", "max() was treated as an upper bound on a wire length",
+          "size = max(peer_length, 1) then read_exact(size)", _sr_case("max_as_ceiling"), _naive_flag, _hardened_flag),
+    Repro("R64", "a comparison that rejects nothing was credited as a bound",
+          "if n < MAX_FRAME: pass then read_exact(n)", _sr_case("non_rejecting_compare"), _naive_flag, _hardened_flag),
 ]
 
 
