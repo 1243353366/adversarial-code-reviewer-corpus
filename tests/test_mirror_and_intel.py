@@ -183,3 +183,15 @@ def test_the_report_serialises_for_a_downstream_consumer():
 def test_cli_runs_both_tools():
     assert ai.main(["--json"]) == 0
     assert mx.main(["--json", "--sessions", "2"]) == 0
+
+
+def test_both_modules_run_as_processes_not_just_as_functions():
+    """Regression: aws_intel used sys.argv without importing sys, and calling main() in-process
+    never touched the __main__ path. CI found it; this test now would."""
+    import subprocess
+
+    for script in ("mirror.py", "aws_intel.py"):
+        result = subprocess.run([sys.executable, str(DEC / script), "--json"],
+                                capture_output=True, text=True, timeout=120)
+        assert result.returncode == 0, (script, result.stderr[-400:])
+        assert json.loads(result.stdout)

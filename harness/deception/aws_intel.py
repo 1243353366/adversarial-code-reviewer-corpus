@@ -25,6 +25,7 @@ import argparse
 import hashlib
 import ipaddress
 import json
+import sys
 from dataclasses import asdict, dataclass, field
 
 # Ordered strongest to weakest. Confidence is capped by the strongest evidence actually present,
