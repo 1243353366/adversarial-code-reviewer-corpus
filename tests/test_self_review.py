@@ -81,6 +81,64 @@ def test_wire_length_clamped_or_checked_is_not_flagged():
     assert run(SR.rule_length_before_bound, checked) == []
 
 
+def test_max_is_not_a_ceiling_for_a_wire_length():
+    """R63: max() sets a floor, so an attacker can still choose an enormous length."""
+    code = ("import struct\n"
+            "def f(peer):\n"
+            "    (n,) = struct.unpack('>I', peer.read_exact(4))\n"
+            "    size = max(n, 1)\n"
+            "    return peer.read_exact(size)\n")
+    assert run(SR.rule_length_before_bound, code)
+
+
+def test_min_against_something_that_is_not_a_limit_does_not_bound():
+    code = ("import struct\n"
+            "def f(peer, other):\n"
+            "    (n,) = struct.unpack('>I', peer.read_exact(4))\n"
+            "    size = min(n, other)\n"
+            "    return peer.read_exact(size)\n")
+    assert run(SR.rule_length_before_bound, code)
+
+
+def test_a_comparison_that_does_not_reject_is_not_a_bound():
+    """R64: the comparison is present, but nothing refuses the unsafe value."""
+    code = ("import struct\n"
+            "MAX_FRAME = 1024\n"
+            "def f(peer):\n"
+            "    (n,) = struct.unpack('>I', peer.read_exact(4))\n"
+            "    if n < MAX_FRAME:\n"
+            "        pass\n"
+            "    return peer.read_exact(n)\n")
+    assert run(SR.rule_length_before_bound, code)
+
+
+def test_a_rejecting_guard_still_counts_as_a_bound():
+    code = ("import struct\n"
+            "MAX_FRAME = 1024\n"
+            "def f(peer):\n"
+            "    (n,) = struct.unpack('>I', peer.read_exact(4))\n"
+            "    if n > MAX_FRAME:\n"
+            "        raise ValueError('too long')\n"
+            "    return peer.read_exact(n)\n")
+    assert run(SR.rule_length_before_bound, code) == []
+
+
+CHAIN = ("import struct\n"
+         "def f(peer):\n"
+         "    (n,) = struct.unpack('>I', peer.read_exact(4))\n"
+         "    a = n\n"
+         "    b = a\n"
+         "    c = b\n"
+         "    d = c\n"
+         "    size = int(d)\n"
+         "    return peer.read_exact(size)\n")
+
+
+def test_taint_follows_a_long_alias_chain():
+    """Propagation runs to a fixpoint, so chain length is not a blind spot by construction."""
+    assert run(SR.rule_length_before_bound, CHAIN)
+
+
 def test_constant_size_is_not_flagged():
     code = "def f(peer):\n    return peer.read_exact(4)\n"
     assert run(SR.rule_length_before_bound, code) == []

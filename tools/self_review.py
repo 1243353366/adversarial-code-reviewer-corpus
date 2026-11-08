@@ -35,7 +35,8 @@ PEER_AUTH_KEYS = {"role", "origin", "cmd", "admin", "scope", "authenticated"}
 PAYLOAD_NAMES = {"msg", "payload", "body", "message", "data", "envelope", "frame"}
 SIZE_CALLS = {"read_exact", "recv", "allocate", "bytearray", "read"}
 PASSTHROUGH = {"int", "float", "abs", "str", "bool"}
-CLAMPS = {"min", "max"}
+UPPER_CLAMPS = {"min"}   # min(x, LIMIT) can cap; max(x, 1) only floors
+LOWER_CLAMPS = {"max"}
 
 HIGH, MEDIUM, LOW = "high", "medium", "low"
 
@@ -126,6 +127,38 @@ def rule_peer_authority(tree: ast.AST, path: str) -> list[Finding]:
     return out
 
 
+def _is_limit(node: ast.AST) -> bool:
+    """A constant or an upper-case threshold, which is how limits are spelled here."""
+    return (isinstance(node, ast.Constant) and isinstance(node.value, (int, float))) or (
+        isinstance(node, ast.Name) and node.id.isupper())
+
+
+def _reject_guards(scope: ast.AST) -> set[str]:
+    """Names whose out-of-range branch exits, so later use is bounded by an upper limit.
+
+    `if n < MAX: pass` does not qualify: the comparison is present but nothing rejects the
+    unsafe value, and crediting it was R64. Only a guard whose body raises, returns, breaks
+    or continues counts. The analysis is still path-insensitive: it credits the whole scope
+    once such a guard exists, so a second unsafe use before the guard is not modelled.
+    """
+    bounded: set[str] = set()
+    exits = (ast.Raise, ast.Return, ast.Continue, ast.Break)
+    for node in _scope_nodes(scope):
+        if not isinstance(node, ast.If):
+            continue
+        if not any(isinstance(stmt, exits) for stmt in node.body):
+            continue
+        for cmp in [n for n in ast.walk(node.test) if isinstance(n, ast.Compare)]:
+            if len(cmp.ops) != 1:
+                continue
+            op, left, right = cmp.ops[0], cmp.left, cmp.comparators[0]
+            if isinstance(left, ast.Name) and _is_limit(right) and isinstance(op, (ast.Gt, ast.GtE)):
+                bounded.add(left.id)
+            elif isinstance(right, ast.Name) and _is_limit(left) and isinstance(op, (ast.Lt, ast.LtE)):
+                bounded.add(right.id)
+    return bounded
+
+
 def _taint_analysis(scope: ast.AST) -> tuple[set[str], set[str]]:
     """Names carrying wire-derived values, and names a visible check or clamp has bounded.
 
@@ -138,7 +171,9 @@ def _taint_analysis(scope: ast.AST) -> tuple[set[str], set[str]]:
     tainted: set[str] = set()
     bounded: set[str] = set()
     assigns = list(_assigns(scope))
-    for _ in range(3):
+    # iterate to a fixpoint: a chain can be arbitrarily long, and a fixed budget is a
+    # depth limit dressed as data flow. The assignment count bounds the work.
+    for _ in range(len(assigns) + 2):
         for node in assigns:
             value = node.value
             if isinstance(value, ast.Call) and _call_name(value) == "unpack":
@@ -148,19 +183,12 @@ def _taint_analysis(scope: ast.AST) -> tuple[set[str], set[str]]:
             if not origin:
                 continue
             names = _target_names(node.targets)
-            if isinstance(value, ast.Call) and _call_name(value) in CLAMPS:
+            if isinstance(value, ast.Call) and _call_name(value) in UPPER_CLAMPS and \
+                    any(_is_limit(arg) for arg in value.args):
                 bounded.update(names)
             else:
                 tainted.update(names)
-    for node in _scope_nodes(scope):
-        if isinstance(node, ast.Compare):
-            sides = [node.left, *node.comparators]
-            for a, b in zip(sides, sides[1:]):
-                if not isinstance(a, ast.Name) or a.id not in tainted:
-                    continue
-                if (isinstance(b, ast.Constant) and isinstance(b.value, (int, float))) or (
-                        isinstance(b, ast.Name) and b.id.isupper()):
-                    bounded.add(a.id)
+    bounded |= _reject_guards(scope)
     return tainted, bounded
 
 
@@ -178,7 +206,8 @@ def _unguarded_size_names(expr: ast.AST, tainted: set[str], bounded: set[str]) -
     out: set[str] = set()
 
     def walk(node: ast.AST) -> None:
-        if isinstance(node, ast.Call) and _call_name(node) in CLAMPS:
+        if isinstance(node, ast.Call) and _call_name(node) in UPPER_CLAMPS \
+                and any(_is_limit(arg) for arg in node.args):
             return
         if isinstance(node, ast.Name) and node.id in tainted and node.id not in bounded:
             out.add(node.id)
@@ -264,13 +293,15 @@ def rule_ratio_without_floor(tree: ast.AST, path: str) -> list[Finding]:
     for scope in _scopes(tree):
         floored: set[str] = set()
         for node in _assigns(scope):
-            if isinstance(node.value, ast.Call) and _call_name(node.value) == "max":
+            v = node.value
+            if isinstance(v, ast.Call) and _call_name(v) in LOWER_CLAMPS and any(
+                    _is_limit(arg) for arg in v.args):
                 floored.update(_target_names(node.targets))
         for node in _scope_nodes(scope):
             if not isinstance(node, ast.BinOp) or not isinstance(node.op, ast.Div):
                 continue
             denom = node.right
-            guarded = (isinstance(denom, ast.Call) and _call_name(denom) in CLAMPS) or (
+            guarded = (isinstance(denom, ast.Call) and _call_name(denom) in LOWER_CLAMPS) or (
                 isinstance(denom, ast.Name) and denom.id in floored)
             if not guarded and isinstance(denom, (ast.Name, ast.Attribute)):
                 out.append(Finding(path, node.lineno, "ratio_without_floor", HIGH,
