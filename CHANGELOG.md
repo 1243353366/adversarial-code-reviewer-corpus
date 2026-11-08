@@ -86,6 +86,20 @@ Changes to what the corpus contains, with the reason each decision was made. The
 - **Added `rejected_sources` and `check_rejected_sources`.** Justification: refusing a source is a claim about the world, so it needs the same treatment as any other claim. The check fails a refusal with no recorded attempt, an unknown reason code, or evidence under forty characters.
 - **Rewrote three claim texts after the witness check rejected them.** Justification: `check_locator_witness` refuses a witness quote that restates the claim, and the first version of D7's claims copied the quote into the claim field. The guard caught its author doing the exact thing it exists to prevent, which is the only evidence that it works.
 
+### Findings recorded from the batch-2 sources (2026-11-08)
+
+Three claims were extracted from D7 and none from D6. The two refused sources contributed no findings, because nothing was read from them.
+
+- **D7-C01, Introduction, opening paragraph.** 1.3 billion malware specimens were reported as known, and that figure is given as the stated reason for moving to data-driven machine-learning analysis.
+- **D7-C02, Introduction, contribution statement.** The authors report stable performance on rare and prominent family classification under class imbalance, bought with a higher abstention or reject-option rate.
+- **D7-C03, Results, confidence metric discussion.** Their own reading favors ensemble voting as the confidence metric for the imbalance problem, on the ground that it keeps a lower risk score across most coverage levels than their semi-supervised baselines.
+- **D6 produced no claims, deliberately.** Malpedia is a curated family and actor index that cites primary reporting. Its content is naming and pointers; extracting claims from it would manufacture a source of record it does not claim to be. It stays `unreviewed` with zero claims and is barred from detector construction.
+- **RS1 produced no findings.** EvilMutex answered 200 with no author, no methodology, no citations and no license on any page reached, so nothing in it can be attributed to anyone and nothing was extracted.
+- **RS2 produced no findings, and none can be reported.** The Medium article returned 403 to two independent retrieval routes and was never read, so this repository contains no statement about its contents, favourable or otherwise. "We could not read it" is recorded as an attempt log, not as a judgment on quality.
+- **Relevance, stated plainly.** Three of the four are malware-taxonomy material and none bears on whether a code reviewer's findings are correct. D7 informs the S7 and S8 design notes as an adjacent-field precedent on per-class reporting and abstention calibration; it is not evidence for this project's central claim, and `admitted_for` in the metadata records that restriction.
+
+The three D7 claims are `verified` with verbatim witnesses, character offsets and artifact hashes in [harness/retrievals/D7.json](harness/retrievals/D7.json); `curl -sL https://arxiv.org/pdf/2403.02546v1 | sha256sum` reproduces the hash they were taken from.
+
 ## Known gaps
 , stated rather than implied
 
