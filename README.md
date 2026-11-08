@@ -46,8 +46,8 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 ```
 python tools/validate_corpus.py   # 17 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 182 tests: validators, attacks, hostile peers, deception
-python tools/repro.py --check     # 52 defects: each reproduces on its historical state, then stays caught
+pytest -q                         # 205 tests: validators, attacks, hostile peers, deception
+python tools/repro.py --check     # 58 defects: each reproduces on its historical state, then stays caught
 ```
 
 Sixteen checks, not four. The later ones were added by attacking the validators themselves: six of them exist because a mutation got through the first version. The four mutations that still get through are written as passing tests, so the limits are visible in code rather than discovered in an incident. See [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md).
@@ -94,6 +94,10 @@ The degenerate case is the whole point. An empty request is the cheapest thing t
 The peer supplies data; the listener supplies meaning. `harness/deception/` makes the second half true: credentials generated per issuance rather than copied, an in-memory filesystem that refuses to resolve itself out of bounds, a simulated shell with a whitelisted grammar and no execution primitive anywhere, canary tokens that fire on reuse rather than discovery, and two watermark layers so a leaked document identifies which issuance leaked and how many were merged.
 
 Attribution is the point. A trap that wastes an attacker's afternoon is a delay; a trap that reports which fabricated package came back is intelligence about the attacker's pipeline. The limits are tested rather than claimed: strip both watermark layers and the text is unattributable, which is why credential values are registered server-side as a second route.
+
+## Recovery verification
+
+`harness/recovery/` decides whether recovery may be *declared*, which is a different question from whether the listener answered. Verdicts are `verified`, `apparent`, `disputed`, `regressed`, in that order of strength. Process control is necessary and never sufficient; `unavailable` evidence blocks rather than passes; a session nobody owns disputes a clean picture; identity is pid plus start time, so a restart is a regression rather than a recovery; and one clean round is a snapshot, not a verification.
 
 ## Declared controls and effective controls
 
