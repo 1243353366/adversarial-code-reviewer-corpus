@@ -46,8 +46,8 @@ Metadata is enforced, not just documented. On every push and pull request:
 
 ```
 python tools/validate_corpus.py   # 17 checks: schema, provenance, evidence gates, licensing, counts, docs
-pytest -q                         # 88 tests: negative cases, adversarial attacks, admitted blind spots
-python tools/repro.py --check     # 23 defects: each reproduces on its historical state, then stays caught
+pytest -q                         # 103 tests: validators, adversarial attacks, live hostile-peer cases
+python tools/repro.py --check     # 29 defects: each reproduces on its historical state, then stays caught
 ```
 
 Sixteen checks, not four. The later ones were added by attacking the validators themselves: six of them exist because a mutation got through the first version. The four mutations that still get through are written as passing tests, so the limits are visible in code rather than discovered in an incident. See [`corpus/out/08-validator-adversarial-review.md`](corpus/out/08-validator-adversarial-review.md).
@@ -106,6 +106,12 @@ Entries 4 and 5 share a cause worth naming: both controls were reported as worki
 **Why the agent's own failure is in here.** The README records that an AI agent working in this repository pushed directly to main, that the content passed its tests, and that the process violation counted anyway. Automated contribution is not evidence of correctness. A contributor whose errors go unrecorded is a control that has never been tested, and the intent here is to test it in public.
 
 The soundtrack to this was apparently Steel Panther's *Community Property*. That is not a methodology endorsement, and no part of the corpus validates it.
+
+## Live code
+
+`harness/untrusted_peer/` is the first executable code here, and it addresses the receiving end of a connection to a machine nobody can audit.
+
+The rule: **the peer supplies data, the listener supplies meaning.** Six checks, each shown failing in [a naive listener](harness/untrusted_peer/naive.py) before [the hardened one](harness/untrusted_peer/hardened.py) refuses it: frame length bounded before allocation, strict decode, key and type allowlist, role from local state rather than the peer's claim, logs sanitized, wall-clock deadline. Nothing in the package executes anything, and `test_receiver_never_executes_what_the_peer_sends` fails the build if that changes.
 
 ## Evidence classification
 
