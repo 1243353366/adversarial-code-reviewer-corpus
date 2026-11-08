@@ -29,7 +29,8 @@ def _rejections(**over):
         "url": "https://example.org/paper",
         "reason_code": "unretrievable",
         "retrieval_attempts": [{"url": "https://example.org/paper", "status": 403}],
-        "evidence": "Two requests returned 403 from the origin, so the page was never read.",
+        "evidence": ("Two direct requests returned 403 behind the interstitial, so the page was never "
+                     "read; the reader proxy also returned 403."),
     }
     base.update(over)
     return {"rejected_sources": [base]}
@@ -51,6 +52,11 @@ def test_rejection_with_no_attempt_is_caught():
 
 def test_unknown_reason_code_is_caught():
     assert V.check_rejected_sources(_rejections(reason_code="i_do_not_like_it"))
+
+
+def test_evidence_between_forty_and_eighty_characters_is_caught():
+    """Sixty characters is the old threshold's idea of evidence. It is not evidence."""
+    assert V.check_rejected_sources(_rejections(evidence="Saw 403 twice, could not read the page at all."))
 
 
 def test_thin_evidence_is_caught():
@@ -140,3 +146,42 @@ def test_weak_urls_are_rejected(url):
 def test_real_urls_pass():
     for url in ("https://example.org/a.pdf", "https://arxiv.org/abs/2403.02546"):
         assert V.url_structure_error(url) is None
+
+def test_witness_host_must_match_the_document():
+    """A retrieval on a different host is a different source, whatever the id says."""
+    claims = copy.deepcopy(CLAIMS)
+    foreign = copy.deepcopy(RETRIEVALS)
+    rid = next(iter(foreign["retrievals"]))
+    foreign["retrievals"][rid]["url"] = "https://example.invalid/abs/2403.02546"
+    owner = foreign["retrievals"][rid]["document_id"]
+    for cl in claims["claims"]:
+        if cl["document_id"] == owner and cl["locator_status"] == "verified":
+            cl["locator"]["witness"]["retrieval_id"] = rid
+            assert V.check_locator_witness(claims, foreign, META), "host mismatch went unseen"
+            return
+    raise AssertionError("no verified claim to test with")
+
+
+def test_witness_arxiv_id_must_match_the_document():
+    """Same host, different paper: the witness proves nothing about this claim."""
+    claims = copy.deepcopy(CLAIMS)
+    foreign = copy.deepcopy(RETRIEVALS)
+    rid = next(iter(foreign["retrievals"]))
+    foreign["retrievals"][rid]["url"] = "https://arxiv.org/abs/9999.99999"
+    owner = foreign["retrievals"][rid]["document_id"]
+    for cl in claims["claims"]:
+        if cl["document_id"] == owner and cl["locator_status"] == "verified":
+            cl["locator"]["witness"]["retrieval_id"] = rid
+            assert V.check_locator_witness(claims, foreign, META), "wrong paper went unseen"
+            return
+    raise AssertionError("no verified claim to test with")
+
+
+def test_second_manifest_is_loaded_not_just_d3():
+    """A witness satisfied from D7.json proves the loader reads more than one file."""
+    assert V.check_locator_witness(CLAIMS, RETRIEVALS, META) == []
+    files = sorted(p.name for p in (ROOT / "harness" / "retrievals").glob("*.json"))
+    assert len(files) > 1, files
+    cited = {c["locator"]["witness"]["retrieval_id"] for c in CLAIMS["claims"]
+             if c.get("locator_status") == "verified"}
+    assert any(rid.split("-")[0] != "D3" for rid in cited), cited

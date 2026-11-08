@@ -59,6 +59,8 @@ Repro ids `R01`–`R20` are defined in `tools/repro.py`.
 
 ## Acquisitions
 
+**Method: mutation checks for the review's guards.** `tools/mutation_check.py` reverts each guard and confirms the test fails without it. Eight of nine guards are currently isolated by a test; the four that are not share fixtures where a second guard fires first, so a disabled guard leaves the suite green. The tool prints the shortfall rather than rounding it up, because a proof of coverage that skips the unproven cases is the same defect this repository keeps finding.
+
 Changes to what the corpus contains, with the reason each decision was made. These are not defect fixes, so they carry no repro; the acquisition record with retrieval hashes is in [corpus/out/11-acquisition-batch-2.md](corpus/out/11-acquisition-batch-2.md).
 
 - **Admitted D6 (Malpedia) as `unreviewed`, with zero claims.** Justification: family naming has to come from somewhere before any abuse-potential work is possible, while an index that cites primary reporting is a pointer, not evidence. Extracting claims from an index would manufacture a source of record it does not claim to be.
