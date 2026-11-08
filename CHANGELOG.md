@@ -83,6 +83,9 @@ Repro ids `R01`–`R20` are defined in `tools/repro.py`.
 
 ## Acquisitions
 
+**Method: failures now carry an identity, a category and a witness.** `tools/failure_intelligence.py` and `harness/findings.jsonl` turn each failure into a record with separated fields: observed facts, inferred risk, evidence, analyzer limitations, next action. Nine records cover the defects found in this repository's own review tooling, including the two that shared one wrong assumption about what a bound is. The component cannot suppress or close anything; it can only propose, and a finding reaches `resolved` only when the record names a reproduction that exists and a regression test that exists, both verified against `tools/repro.py` and the test files. Category is mandatory because a false positive treated as a vulnerability wastes a fix, while a false negative treated as clean is the one that costs you. Nothing here is claimed as exploitable in any deployment; confidence describes the evidence attached to the record.
+
+
 **Method: the third review claim did not reproduce.** The review argued that a three-pass propagation budget let a long alias chain escape detection, and gave a five-link chain as the example. It does not reproduce, and the reason is worth recording: assignments are iterated in source order, so a straight-line chain propagates fully in one pass, and a chain long enough to need two requires a name to be used before it is assigned, which is not valid Python in that shape. The iteration is now a fixpoint anyway, because a fixed budget would be a depth limit dressed as data flow the first time a loop or a reordering appeared, but no defect is claimed and no repro row is filed. Claiming a defect whose reproduction does not exist would be the same error in the other direction.
 
 
