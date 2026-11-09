@@ -1,7 +1,7 @@
 {
   "algorithm": "sha256",
   "files": {
-    ".github/workflows/validate.yml": "ddf2b5398565b60db00e635cbcab85f74f39dcd086360ff4ec173cd7273716a0",
+    ".github/workflows/validate.yml": "0f9708b851db34ea88e1519786fee42b94d794164bb52baa47fab29128541993",
     "harness/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "harness/classification_benchmark.jsonl": "bfe7760da6030ae3ac99f5a7715b43ba19094f34b269606a82582c48443a1e92",
     "harness/cost/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -14,6 +14,7 @@
     "harness/deception/effort.py": "dfe9ffe5663a0210317f2d7629bdfb85ac71679da0d63a79207f2112c0fad19c",
     "harness/deception/hellbox.py": "801e92b22234e7747539685e9e83b01ec3c9ed33d30bf2afafd57c72e74e31e5",
     "harness/deception/mirror.py": "290bfcc761559cf2a0450011a963032c84ebae2617b89b730c9cc7e0b2c390eb",
+    "harness/deception/ownership.py": "99683558f15dcb13c07cfc2e9f480a03db4ced689e5e365271f1ff39c4b801ca",
     "harness/deception/shell.py": "7e2be4669fe4e442fdd09327266f978dc4c545a7dbd462fd2de148ed237f2e3d",
     "harness/deception/vault.py": "416e46271a2264bc435256b9359030e75e168fba9f75d35853d4976232bd1da3",
     "harness/deception/watermark.py": "1257f7e9af2234a005c73bc86cf7e2e191624676b33534b4300d6fb4f3fc11f0",
@@ -55,6 +56,7 @@
     "tests/test_length_alias.py": "40583a2662beb4eff996be39763635eb34f3cb8e8b78b99cdb1e5aaf297a0e03",
     "tests/test_metadata_schema.py": "cea3c8d105aa00de254b436d4ba1304179ae248ce12196cfcadc69bac002a8d5",
     "tests/test_mirror_and_intel.py": "84410baec6983f571a9f692cf091400cf3df4ed7e4aff4eefb872277fbe3d6ec",
+    "tests/test_ownership.py": "fc2c3d9dbf9f9dfddbd6c74959de141dd931aceb7fa8ab2995c4e07baab5475f",
     "tests/test_protection.py": "d3982c25d34537a017332ada7c2effd215336019249725043b7786c8860a2851",
     "tests/test_provenance.py": "33813cceb954c18d6422b57da1938bdc579690c7b0a290ad4b8de8fa99699147",
     "tests/test_recovery.py": "30b44e280f34564f1fcba065f4ba60eaf94967742f5eaa55c92ba91fb2533a42",
@@ -75,5 +77,5 @@
     "tools/self_review.py": "bb173242ce39a6fa89fbca62d10b1beb9977242ae9a276889124a5489077c369",
     "tools/validate_corpus.py": "b91c07d036476f36f1cf31283cbedf4185238a2e5ac6f80aae86e77be7bdba86"
   },
-  "set_digest": "25c339b0f00f51bf9dce4032763f0281a6395a209bc0447f0eb924679d6d9d25"
+  "set_digest": "8d0893304797cc69262a1faeb1b5301e3ac726e8c31948b520465ce2ff3faee9"
 }
