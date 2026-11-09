@@ -1,7 +1,7 @@
 {
   "algorithm": "sha256",
   "files": {
-    ".github/workflows/validate.yml": "0dbd8f7360bc9a9a6999d1d7bcdd951b4372800b7c227b261a5ecb48ffb16c79",
+    ".github/workflows/validate.yml": "ddf2b5398565b60db00e635cbcab85f74f39dcd086360ff4ec173cd7273716a0",
     "harness/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "harness/classification_benchmark.jsonl": "bfe7760da6030ae3ac99f5a7715b43ba19094f34b269606a82582c48443a1e92",
     "harness/cost/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -48,6 +48,7 @@
     "tests/test_failure_intelligence.py": "73f905fc643c783f466c62e22fa3f9b718354da42ed12a867e26c52fddb5f063",
     "tests/test_hardware_trust.py": "463fa9c765ef6eec7ab9f6f49a2f51c4b627b291ac6e1b783cfe2e9251aa8175",
     "tests/test_hellbox.py": "1c6c13a13bb2d015cc9782ab6b93e6492555ae4b6ae5ca8d1baaadbe252607ce",
+    "tests/test_hostile_matrix.py": "72731461897887c4b61642b0ee2afb1f652d25851122745ec2d651e5c3277c80",
     "tests/test_integrity.py": "4affa61f9fb8b13464aabfcbddf15a696e68c3276ec4ad173ff463df049dda82",
     "tests/test_length_alias.py": "40583a2662beb4eff996be39763635eb34f3cb8e8b78b99cdb1e5aaf297a0e03",
     "tests/test_metadata_schema.py": "cea3c8d105aa00de254b436d4ba1304179ae248ce12196cfcadc69bac002a8d5",
@@ -65,11 +66,12 @@
     "tools/failure_classifier.py": "ec5cbe2b547ba647911bdd13b44fe73effa8f823b256a737395a6109bc8c3538",
     "tools/failure_intelligence.py": "b68b76a1038b8e4df1e4952806b8867181257abd804dcc68e78bd19059e6b9ab",
     "tools/harness_arithmetic.py": "6ae81eb6ed200840895a77922d34b97a14548a6841698729bfe24a1aa45d56db",
+    "tools/hostile_matrix.py": "1faa6257669cb380cc00692253a5520c45ac6a0079f8f90af112c2bad5a2911f",
     "tools/integrity.py": "8813f33c65fe2bce43412324636c39b8b2b357d3497692fb53820b06b4b6eae3",
     "tools/mutation_check.py": "df856dd10c634851f243ca3fd5fbec27036a79b50d17d8ee066a8ce30643d8ce",
     "tools/repro.py": "4b741d1db64a7b4592c4598d4b6ea4f751a5e9ffe788a8c8824d4c8bea6f1de2",
     "tools/self_review.py": "bb173242ce39a6fa89fbca62d10b1beb9977242ae9a276889124a5489077c369",
     "tools/validate_corpus.py": "b91c07d036476f36f1cf31283cbedf4185238a2e5ac6f80aae86e77be7bdba86"
   },
-  "set_digest": "877974401e35b9292ab83d21e7be3aae3dfe2aec45c9554192839e9a2ff675df"
+  "set_digest": "d50a1ec00be38f3f8f4dac2cebe07beefe5f6eb43fb40060f0ecc70429f2b0d3"
 }
