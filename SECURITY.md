@@ -32,8 +32,8 @@ against a mutable baseline stored in this repository.
 ## The anchor
 
 ```
-    set digest: d50a1ec00be38f3f8f4dac2cebe07beefe5f6eb43fb40060f0ecc70429f2b0d3
-    files:      71
+    set digest: cc2e8884a955e399c7a103439f6f42ea41d3e9b9f4e94cfb6dd590b9eca2ebad
+    files:      73
 ```
 
 `SECURITY.md` sits outside the covered set on purpose, so the anchor is not part of what it attests.
