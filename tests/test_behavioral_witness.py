@@ -10,13 +10,10 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
-import sys
 from pathlib import Path
 
-import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "tools"))
 
 import behavioral_witness as bw  # noqa: E402
 import failure_classifier as fc  # noqa: E402

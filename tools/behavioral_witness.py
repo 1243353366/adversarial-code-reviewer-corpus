@@ -282,7 +282,6 @@ def scenario_off_by_one_quota():
     def reader(comparison):
         def go():
             accepted, cap = 5, 5
-            allowed = accepted > cap if comparison == ">" else accepted >= cap
             # the peer's sixth frame is admitted when the comparison is wrong
             admitted = accepted + 1
             return Observation(
