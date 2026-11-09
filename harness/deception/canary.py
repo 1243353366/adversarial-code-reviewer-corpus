@@ -131,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
 
     registry = CanaryRegistry()
     planted = registry.plant("mx-alpha", 1301, _Env)
-    registry.observe("mx-alpha", f"cat /var/www/app/.env", "file_read")
+    registry.observe_file_read("mx-alpha", "/var/www/app/.env")
     registry.observe("mx-beta", f"export AWS_ACCESS_KEY_ID={planted.token}")
     print(f"planted {len(planted.planted_at)} paths, token ...{planted.token[-6:]}")
     for pair in registry.links():
