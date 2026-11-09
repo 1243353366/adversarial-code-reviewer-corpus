@@ -32,7 +32,7 @@ against a mutable baseline stored in this repository.
 ## The anchor
 
 ```
-    set digest: 3e4e3adf10211adce999cbd1f1f58fa65e3111d14b0e713eb4327a404e4ebedd
+    set digest: 25c339b0f00f51bf9dce4032763f0281a6395a209bc0447f0eb924679d6d9d25
     files:      73
 ```
 

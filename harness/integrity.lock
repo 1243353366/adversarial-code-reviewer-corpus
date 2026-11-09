@@ -9,11 +9,11 @@
     "harness/deception/__init__.py": "36c79b314e73aed52944f6705a17534ec84923ebde5fe1d2fd2c658375c97e4a",
     "harness/deception/alerts.py": "04264ffcbc81d6cafea4f1a55dabad7e3360cc7c437af2719624a93ccc86a845",
     "harness/deception/aws_intel.py": "d6dfe2cca064a8a7694600882b5503e42c1b2becfad2f3e7d36305b7f5c74ee5",
-    "harness/deception/canary.py": "da46c4c598b72a14f8c68d025fa3544f02c25e0384da6a124484aacdadc52361",
+    "harness/deception/canary.py": "aa3b82b700a6888a1672285fa84b162a04ca2a8df426b3464deaf7b2baadf8f5",
     "harness/deception/credentials.py": "a6b13819b606d4ec3bd64abcacc70be081fe095ae15602f3294c447781c80588",
     "harness/deception/effort.py": "dfe9ffe5663a0210317f2d7629bdfb85ac71679da0d63a79207f2112c0fad19c",
     "harness/deception/hellbox.py": "801e92b22234e7747539685e9e83b01ec3c9ed33d30bf2afafd57c72e74e31e5",
-    "harness/deception/mirror.py": "39d9c33e1d4578031e27cd041e9287067952e8936185bb15b7c1b8637fd6c76e",
+    "harness/deception/mirror.py": "290bfcc761559cf2a0450011a963032c84ebae2617b89b730c9cc7e0b2c390eb",
     "harness/deception/shell.py": "7e2be4669fe4e442fdd09327266f978dc4c545a7dbd462fd2de148ed237f2e3d",
     "harness/deception/vault.py": "416e46271a2264bc435256b9359030e75e168fba9f75d35853d4976232bd1da3",
     "harness/deception/watermark.py": "1257f7e9af2234a005c73bc86cf7e2e191624676b33534b4300d6fb4f3fc11f0",
@@ -39,7 +39,7 @@
     "requirements-dev.txt": "daaf86fd4f22513da1b64a1054bb0351b4a99d1e29abb16a1dcfbd469c882fa5",
     "tests/conftest.py": "390c367fbae0b18b195eb8c5f0f4d9347059edcf48d6eed5252a130435e2513a",
     "tests/test_behavioral_witness.py": "78fc44a31ece7fc0bd8e5690a9c6b6d37624b7d4b3bc3b2d5ab95016bfb5a683",
-    "tests/test_canary.py": "ce15bd2c0bb9004d7795da4c98a44a907611d599ea0b62baaf1d0fae68f9a1fb",
+    "tests/test_canary.py": "fbc2419e74da6618a56810652ec17b68d0c93756a431a95fb151ca49de9ce70f",
     "tests/test_changelog.py": "cbfa1220387229bb1254990974511b6c27acf888165da337eb93728bca31215d",
     "tests/test_citations.py": "f65dff4d22a5e49e9a2c802f2913309527b473f4b340bf60252e8db8ba1de7f0",
     "tests/test_claim_manifest.py": "058de5ff4dd5c6dbf43da574501ee0a1fa4365fe198ff6c3eb544dd89fe26c89",
@@ -75,5 +75,5 @@
     "tools/self_review.py": "bb173242ce39a6fa89fbca62d10b1beb9977242ae9a276889124a5489077c369",
     "tools/validate_corpus.py": "b91c07d036476f36f1cf31283cbedf4185238a2e5ac6f80aae86e77be7bdba86"
   },
-  "set_digest": "3e4e3adf10211adce999cbd1f1f58fa65e3111d14b0e713eb4327a404e4ebedd"
+  "set_digest": "25c339b0f00f51bf9dce4032763f0281a6395a209bc0447f0eb924679d6d9d25"
 }

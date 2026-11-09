@@ -31,6 +31,7 @@ import time
 from dataclasses import dataclass, field
 
 
+from harness.deception import canary as canary_mod
 from harness.deception import hellbox as hb
 
 HOSTS = ["app-prod-07", "api-edge-02", "worker-11", "cache-node-04", "mail-relay-03"]
@@ -96,6 +97,7 @@ class MirrorSession(hb.Session):
     """A session whose state is a host, not a lookup table."""
 
     env: Environment | None = None
+    registry: object | None = None
     persistence: bool = True
     durations_ms: list = field(default_factory=list)
     mutation_log: list = field(default_factory=list)
@@ -141,7 +143,10 @@ class MirrorSession(hb.Session):
             target = env.files.get(_resolve(args[0], env.cwd))
             if target is None:
                 return hb.Response(f"cat: {args[0]}: No such file or directory\n", "enumeration")
-            kind = hb.INTERESTING.get(_resolve(args[0], env.cwd), "file_read")
+            read_path = _resolve(args[0], env.cwd)
+            if self.registry is not None:
+                self.registry.observe_file_read(self.session_id, read_path)
+            kind = hb.INTERESTING.get(read_path, "file_read")
             return hb.Response(target, kind)
         if cmd == "ls":
             target = _resolve(args[0], env.cwd) if args else env.cwd
@@ -194,6 +199,8 @@ class MirrorSession(hb.Session):
 
     def send(self, payload: str):
         started = time.perf_counter()
+        if self.registry is not None:
+            self.registry.observe(self.session_id, payload.splitlines()[0] if payload else "")
         out = super().send(payload)
         if out:   # a closed session answered nothing, so it timed nothing
             self.durations_ms.append((time.perf_counter() - started) * 1000.0)
@@ -222,6 +229,7 @@ class Mirror:
     variation: bool = True
     persistence: bool = True
     sessions: dict = field(default_factory=dict)
+    canaries: object = field(default_factory=lambda: canary_mod.CanaryRegistry())
 
     def connect(self, endpoint: str):
         import hashlib
@@ -235,6 +243,8 @@ class Mirror:
             # produces ~500 of output. The bound that matters here is the transcript cap, so the
             # ratio is set where a single command cannot trip it while sustained flooding still can.
             session.limits = hb.Limits(max_amplification=600.0)
+            self.canaries.plant(session.session_id, seed, session.env.files)
+            session.registry = self.canaries
             self.sessions[key] = session
         session = self.sessions[key]
         if endpoint not in session.endpoints:
