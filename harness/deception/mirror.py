@@ -19,8 +19,8 @@ Second, that consistency equals credibility. Identical environments across unrel
 itself a fingerprint, which is why per-session variation exists and why the metric measures both
 directions: continuity within a session, divergence between sessions.
 
-    python harness/deception/mirror.py            # the measurement table
-    python harness/deception/mirror.py --json
+    python -m harness.deception.mirror            # the measurement table
+    python -m harness.deception.mirror --json
 """
 from __future__ import annotations
 
@@ -29,12 +29,9 @@ import json
 import sys
 import time
 from dataclasses import dataclass, field
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "harness" / "deception"))
 
-import hellbox as hb  # noqa: E402
+from harness.deception import hellbox as hb
 
 HOSTS = ["app-prod-07", "api-edge-02", "worker-11", "cache-node-04", "mail-relay-03"]
 DISTROS = [("Ubuntu 22.04.4 LTS", "5.15.0-88-generic"), ("Debian 12 (bookworm)", "6.1.0-18-amd64"),
@@ -390,7 +387,7 @@ def _effort_sessions(sessions: int = 3):
 
 
 def measure(sessions: int = 4) -> dict:
-    import effort
+    from harness.deception import effort
 
     traffic = _effort_sessions()
     return {

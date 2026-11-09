@@ -153,7 +153,7 @@ def test_measurement_carries_verdicts_effort_and_counted_zeros():
 def test_effort_cli_runs_as_a_process():
     import subprocess
 
-    result = subprocess.run([sys.executable, str(DEC / "effort.py"), "--json"],
+    result = subprocess.run([sys.executable, "-m", "harness.deception.effort", "--json"],
                             capture_output=True, text=True, timeout=120)
     assert result.returncode == 0, result.stderr[-300:]
     payload = json.loads(result.stdout)

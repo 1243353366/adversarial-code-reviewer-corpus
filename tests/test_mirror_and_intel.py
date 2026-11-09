@@ -187,8 +187,8 @@ def test_both_modules_run_as_processes_not_just_as_functions():
     never touched the __main__ path. CI found it; this test now would."""
     import subprocess
 
-    for script in ("mirror.py", "aws_intel.py"):
-        result = subprocess.run([sys.executable, str(DEC / script), "--json"],
+    for script in ("mirror", "aws_intel"):
+        result = subprocess.run([sys.executable, "-m", "harness.deception." + script, "--json"],
                                 capture_output=True, text=True, timeout=120)
         assert result.returncode == 0, (script, result.stderr[-400:])
         assert json.loads(result.stdout)

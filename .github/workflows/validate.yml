@@ -2,7 +2,7 @@ name: validate
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -13,45 +13,47 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      # Before pip install and before any harness file executes by path: a modified
+      # requirements-dev.txt or a replaced script has to be caught here, not afterwards.
+      - name: Verify integrity before executing anything
+        env:
+          ASSAY_ANCHOR: ${{ vars.ASSAY_ANCHOR }}
+          ASSAY_VERIFIER_DIGEST: ${{ vars.ASSAY_VERIFIER_DIGEST }}
+        run: python tools/integrity.py all
+
       - name: Install dev dependencies
         run: pip install -r requirements-dev.txt
-      # Runs first: these files are executed by path below, so drift must be caught before
-      # anything in harness/ or tools/ is allowed to run.
-      - name: Verify repository integrity and identity
-        run: python tools/integrity.py all
 
       - name: Lint the harness
         run: python -m pyflakes harness tools tests
 
       - name: Validate corpus (schema, provenance, licensing guard)
         run: python tools/validate_corpus.py
+
       - name: Review our own code with the catalogue's rules
         run: python tools/self_review.py
-      - name: sinkhole answers a scripted intrusion
-        run: python harness/deception/hellbox.py > /dev/null
-
-      - name: mirror measurement and infrastructure report
-        run: |
-          python harness/deception/mirror.py > /dev/null
-          python harness/deception/aws_intel.py > /dev/null
-
-      - name: attacker effort and counted zero targets
-        run: python harness/deception/effort.py > /dev/null
-
-      - name: hardware trust reports three axes
-        run: python harness/hardware/trust.py > /dev/null
 
       - name: Tests
         run: pytest -q
+
+      - name: sinkhole answers a scripted intrusion
+        run: python -m harness.deception.hellbox
+
+      - name: mirror measurement and infrastructure report
+        run: |
+          python -m harness.deception.mirror --json > /dev/null
+          python -m harness.deception.aws_intel --json > /dev/null
+          python -m harness.hardware.trust --json > /dev/null
 
       - name: failure intelligence is internally consistent
         run: python tools/failure_intelligence.py --check
 
       - name: behavioural witness runs its own scenarios
-        run: python tools/behavioral_witness.py > /dev/null
+        run: python tools/behavioral_witness.py --json > /dev/null
 
       - name: classifier scores against the labelled benchmark
-        run: python tools/failure_classifier.py --eval
+        run: python tools/failure_classifier.py --eval > /dev/null
 
       - name: emit findings for code scanning
         if: always()
