@@ -1,142 +1,138 @@
 """An active canary: the token is the trap, and using it is the alarm.
 
-A passive canary waits in a file to be noticed. This one is a bearer token, planted per session,
-that does work the moment it is touched: it records what touched it and where, links sessions that
-used the same token, and raises the session's priority. Reuse is the interesting event, because a
-credential pasted into a different session or a different infrastructure is the one observation
-that ties two attempts to one operator.
+Two properties, kept apart on purpose.
 
-Three things this deliberately does not do, because they would convert a defensive system into a
-different category of thing: it does not call back to any collector, it does not follow the token
-to whoever is holding it, and it never leaves the process. Everything it produces is a local
-record. Containment is the feature; a beacon with an IP address in it is an offence with a logfile.
+Reproducible: with no secret, the token is derived from the session seed and id, so a test can
+assert on it. Reproducible is not unguessable. Anyone holding this source can compute the same
+token from a known seed, so a deterministic token is a fixture, not a credential, and every record
+says which kind it is.
 
-Tokens are unguessable but not random at test time: derived from the session seed so a run is
-reproducible, which is what makes the reuse tests meaningful.
+Unguessable: pass a secret and the token becomes HMAC-SHA256(secret, seed || session). The secret
+is never stored in this repository, and `secret_backed` records that the property was requested
+rather than assumed.
+
+The canary cannot leave the machine. It records touches, raises priority, and links sessions that
+share a token. It does not resolve the holder, and a shared token is not evidence of one operator.
 """
+
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass, field
+import hmac
+
+PLANT_PATHS = ("/var/www/app/.env", "/home/deploy/.aws/credentials")
+MARKER = "# deploy credentials, rotated 2026-04-11"
 
 
-def derive_token(seed: int) -> str:
-    """Decoy-shaped, deterministic per seed, and useless outside this process."""
-    body = hashlib.sha256(f"canary:{seed}".encode()).hexdigest().upper()
-    return "AKIA" + body[:16]
+def derive_token(seed: int, session_id: str, secret: bytes | None = None) -> str:
+    """A token for this session. Deterministic without a secret, keyed with one."""
+    material = f"{seed}:{session_id}".encode()
+    if secret is not None:
+        return hmac.new(secret, material, hashlib.sha256).hexdigest()[:24]
+    return hashlib.sha256(material).hexdigest()[:24]
 
 
-@dataclass
-class Touch:
-    token: str
-    session_id: str
-    where: str          # "command" | "file_read"
-    evidence: str       # the command or path, truncated
-
-
-@dataclass
 class Canary:
-    token: str
-    session_id: str
-    planted_at: list[str] = field(default_factory=list)
-    touches: list[Touch] = field(default_factory=list)
-    priority: str = "normal"
+    def __init__(self, session_id: str, seed: int, secret: bytes | None = None):
+        self.session_id = session_id
+        self.token = derive_token(seed, session_id, secret)
+        self.secret_backed = secret is not None
+        self.planted_at: list[str] = []
+        self.touches: list[dict] = []
 
-    def touch(self, session_id: str, where: str, evidence: str) -> Touch:
-        hit = Touch(self.token, session_id, where, evidence[:120])
-        self.touches.append(hit)
-        if session_id != self.session_id or where == "file_read":
-            self.priority = "high"
-        return hit
+    def touch(self, where: str, evidence: str, seen_in: str | None = None) -> dict:
+        record = {"session_id": self.session_id, "seen_in": seen_in or self.session_id,
+                  "where": where, "evidence": evidence}
+        self.touches.append(record)
+        return record
 
-    def as_record(self) -> dict:
-        return {
-            "token_suffix": self.token[-6:],   # never the whole token in a report
-            "planted_at": self.planted_at,
-            "touches": len(self.touches),
-            "sessions": sorted({t.session_id for t in self.touches}),
-            "reused_outside_planting_session": any(
-                t.session_id != self.session_id for t in self.touches),
-            "priority": self.priority,
-            "method": ("touches are local records; nothing is transmitted and no holder is "
-                       "contacted"),
-        }
+    def record(self) -> dict:
+        return {"session_id": self.session_id, "token_suffix": self.token[-6:],
+                "secret_backed": self.secret_backed, "planted_at": list(self.planted_at),
+                "touches": len(self.touches), "predictable": not self.secret_backed}
 
 
 class CanaryRegistry:
-    """Planted tokens and what happened to them. One registry per deployment."""
+    """Session-scoped lookups for file reads, token-global lookups for reuse.
 
-    PLANT_PATHS = ("/var/www/app/.env", "/home/deploy/.aws/credentials")
+    Keyed by session id rather than by token: with `variation=False` every session shares a seed,
+    and a token-keyed registry silently overwrote earlier sessions.
+    """
 
     def __init__(self) -> None:
-        self.canaries: dict[str, Canary] = {}
+        self.by_session: dict[str, Canary] = {}
+        self.by_token: dict[str, Canary] = {}
 
-    def plant(self, session_id: str, seed: int, env) -> Canary:
-        """Write the token into synthetic files the session serves, and keep the reference."""
-        canary = Canary(token=derive_token(seed), session_id=session_id)
-        for path in self.PLANT_PATHS:
-            if hasattr(env, "files"):
-                env.files[path] = (f"AWS_ACCESS_KEY_ID={canary.token}\n"
-                                   f"AWS_SECRET_ACCESS_KEY=canary-{seed}\n")
+    def plant(self, session_id: str, seed: int, files: dict, secret: bytes | None = None) -> Canary:
+        canary = Canary(session_id, seed, secret)
+        for path in PLANT_PATHS:
+            existing = files.get(path, "")
+            if canary.token in existing:
                 canary.planted_at.append(path)
-        self.canaries[canary.token] = canary
+                continue
+            body = existing if existing.endswith("\n") or not existing else existing + "\n"
+            files[path] = f"{body}{MARKER}\nAWS_ACCESS_KEY_ID={canary.token}\n"
+            canary.planted_at.append(path)
+        self.by_session[session_id] = canary
+        self.by_token[canary.token] = canary
         return canary
 
-    def resolve(self, text: str) -> Canary | None:
-        """Which canary, if any, appears in this text."""
-        for token, canary in self.canaries.items():
+    def observe(self, session_id: str, text: str) -> dict | None:
+        """A token appearing in a command. Global: a foreign token is the reuse signal."""
+        for token, canary in self.by_token.items():
             if token in text:
-                return canary
+                owner = "own" if canary.session_id == session_id else "foreign"
+                return canary.touch(f"command:{owner}", f"token seen from {session_id}",
+                                    seen_in=session_id)
         return None
 
-    def observe(self, session_id: str, text: str, where: str = "command") -> Touch | None:
-        canary = self.resolve(text)
-        if canary is None:
+    def observe_file_read(self, session_id: str, path: str) -> dict | None:
+        """A planted path opened in this session. Scoped: B reading .env cannot fire A."""
+        canary = self.by_session.get(session_id)
+        if canary is None or path not in canary.planted_at:
             return None
-        return canary.touch(session_id, where, text)
-
-    def observe_file_read(self, session_id: str, path: str) -> Touch | None:
-        """The alarm that matters: a planted path was actually opened, not merely listed."""
-        for canary in self.canaries.values():
-            if path in canary.planted_at:
-                return canary.touch(session_id, "file_read", path)
-        return None
+        return canary.touch("file_read", path)
 
     def links(self) -> list[dict]:
-        """Session pairs tied together by a shared token: the attribution product."""
-        out = []
-        for canary in self.canaries.values():
-            sessions = sorted({t.session_id for t in canary.touches})
-            for other in sessions:
-                if other != canary.session_id:
-                    out.append({"planted_in": canary.session_id, "also_seen_in": other,
-                                "token_suffix": canary.token[-6:]})
-        return out
+        seen: dict[str, set[str]] = {}
+        for session_id, canary in self.by_session.items():
+            if not canary.touches:
+                continue
+            sessions = {session_id} | {t["seen_in"] for t in canary.touches}
+            seen.setdefault(canary.token, set()).update(sessions)
+        return [{"token_suffix": token[-6:], "sessions": sorted(ids),
+                 "identity_claim": "not established",
+                 "note": "a shared token links observations, not people"}
+                for token, ids in seen.items() if len(ids) > 1]
 
     def report(self) -> dict:
-        touched = [c for c in self.canaries.values() if c.touches]
-        return {
-            "tokens_planted": len(self.canaries),
-            "tokens_touched": len(touched),
-            "touches": sum(len(c.touches) for c in self.canaries.values()),
-            "priority": "high" if any(c.priority == "high" for c in self.canaries.values()) else "normal",
-            "links": self.links(),
-            "canaries": [c.as_record() for c in self.canaries.values()],
-        }
+        return {"sessions": len(self.by_session),
+                "predictable_tokens": sum(1 for c in self.by_session.values() if not c.secret_backed),
+                "touches": sum(len(c.touches) for c in self.by_session.values()),
+                "priority_high": [s for s, c in self.by_session.items() if c.touches],
+                "links": self.links(),
+                "unguessability": "not established for deterministic tokens; supply a secret"}
+
+
+def demo() -> CanaryRegistry:
+    registry = CanaryRegistry()
+    alpha, beta = {}, {}
+    registry.plant("mx-alpha", 1301, alpha)
+    registry.plant("mx-beta", 1301, beta)
+    registry.observe_file_read("mx-alpha", "/var/www/app/.env")
+    registry.observe("mx-beta", f"export AWS_ACCESS_KEY_ID={registry.by_session['mx-alpha'].token}")
+    return registry
 
 
 def main(argv: list[str] | None = None) -> int:
-    class _Env:
-        files: dict[str, str] = {}
-
-    registry = CanaryRegistry()
-    planted = registry.plant("mx-alpha", 1301, _Env)
-    registry.observe_file_read("mx-alpha", "/var/www/app/.env")
-    registry.observe("mx-beta", f"export AWS_ACCESS_KEY_ID={planted.token}")
-    print(f"planted {len(planted.planted_at)} paths, token ...{planted.token[-6:]}")
-    for pair in registry.links():
-        print(f"link: planted in {pair['planted_in']} -> also seen in {pair['also_seen_in']}")
-    print(f"priority {registry.report()['priority']}")
+    report = demo().report()
+    print(f"planted in {report['sessions']} sessions, {report['touches']} touch(es)")
+    for link in report["links"]:
+        print(f"link: {link['sessions'][0]} -> also seen in {link['sessions'][1]} "
+              f"(identity: {link['identity_claim']})")
+    for session in report["priority_high"]:
+        print(f"priority high: {session}")
+    print(f"unguessability: {report['unguessability']}")
     return 0
 
 

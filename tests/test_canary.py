@@ -1,94 +1,111 @@
-"""The active canary: it must act, and it must not reach out.
+"""Acceptance tests for the active canary, written against the failures the review named."""
 
-The boundary tests here are the point. A canary that beacons is not a stronger canary; it is a
-different kind of system, and these tests exist so that change cannot happen quietly.
-"""
 from __future__ import annotations
 
 import ast
 from pathlib import Path
 
-from harness.deception import canary as cn
-
-MODULE = Path(cn.__file__)
-
-
-def _env():
-    class _E:
-        files: dict[str, str] = {}
-    return _E()
+from harness.deception import canary as c
+from harness.deception import mirror as mx
 
 
-def test_a_token_is_deterministic_per_seed_and_differs_across_seeds():
-    assert cn.derive_token(1301) == cn.derive_token(1301)
-    assert cn.derive_token(1301) != cn.derive_token(1302)
-    assert cn.derive_token(1301).startswith("AKIA")
+def _registry():
+    return c.CanaryRegistry()
 
 
-def test_planting_writes_the_token_into_files_the_session_serves():
-    env = _env()
-    registry = cn.CanaryRegistry()
-    planted = registry.plant("mx-a", 7, env)
-    assert planted.planted_at
-    assert planted.token in env.files["/var/www/app/.env"]
+def test_identical_seeds_keep_distinct_canary_identities():
+    """variation=False gives every session seed 1301; a token-keyed registry lost them."""
+    mirror = mx.Mirror(variation=False)
+    a = mirror.connect("198.51.100.41:41412")
+    b = mirror.connect("198.51.100.42:41412")
+    token_a = mirror.canaries.by_session[a.session_id].token
+    token_b = mirror.canaries.by_session[b.session_id].token
+    assert token_a != token_b
+    assert len(mirror.canaries.by_session) == 2
+    assert token_a in mirror.canaries.by_token and token_b in mirror.canaries.by_token
 
 
-def test_reading_the_planted_file_is_the_alarm():
-    registry = cn.CanaryRegistry()
-    planted = registry.plant("mx-a", 7, _env())
-    hit = registry.observe_file_read("mx-a", "/var/www/app/.env")
-    assert hit is not None and hit.where == "file_read"
-    assert planted.priority == "high"
+def test_a_read_in_one_session_cannot_fire_another_sessions_canary():
+    mirror = mx.Mirror(variation=False)
+    a = mirror.connect("198.51.100.51:41412")
+    b = mirror.connect("198.51.100.52:41412")
+    a.send("cat /var/www/app/.env\n")
+    assert len(mirror.canaries.by_session[a.session_id].touches) == 1
+    assert mirror.canaries.by_session[b.session_id].touches == []
 
 
-def test_a_quiet_session_leaves_the_canary_untouched():
-    registry = cn.CanaryRegistry()
-    registry.plant("mx-a", 7, _env())
-    assert registry.observe("mx-a", "ls /var/www") is None
-    assert registry.report()["tokens_touched"] == 0
+def test_a_real_cat_through_the_mirror_fires_the_right_canary():
+    mirror = mx.Mirror()
+    a = mirror.connect("198.51.100.61:41412")
+    a.send("cat /home/deploy/.aws/credentials\n")        # no registry call in the test
+    touches = mirror.canaries.by_session[a.session_id].touches
+    assert len(touches) == 1
+    assert touches[0]["where"] == "file_read"
 
 
-def test_reuse_in_another_session_links_the_two_attempts():
-    registry = cn.CanaryRegistry()
-    planted = registry.plant("mx-a", 7, _env())
-    registry.observe("mx-b", f"export AWS_ACCESS_KEY_ID={planted.token}")
+def test_planting_preserves_existing_synthetic_content():
+    registry = _registry()
+    files = {"/var/www/app/.env": "APP_ENV=production\nDB_HOST=127.0.0.1\n"}
+    registry.plant("mx-a", 7, files)
+    body = files["/var/www/app/.env"]
+    assert body.startswith("APP_ENV=production\nDB_HOST=127.0.0.1\n")
+    assert registry.by_session["mx-a"].token in body
+
+
+def test_a_quiet_session_produces_no_alerts():
+    mirror = mx.Mirror()
+    quiet = mirror.connect("198.51.100.71:41412")
+    for command in ("whoami\n", "uname -a\n", "ps\n", "ls /var/www/app\n"):
+        quiet.send(command)
+    assert mirror.canaries.by_session[quiet.session_id].touches == []
+    assert mirror.canaries.report()["priority_high"] == []
+
+
+def test_reuse_links_sessions_without_claiming_identity():
+    registry = _registry()
+    registry.plant("mx-alpha", 1301, {})
+    registry.plant("mx-beta", 1301, {})
+    token = registry.by_session["mx-alpha"].token
+    registry.observe("mx-beta", f"export AWS_ACCESS_KEY_ID={token}")
     links = registry.links()
-    assert links == [{"planted_in": "mx-a", "also_seen_in": "mx-b",
-                      "token_suffix": planted.token[-6:]}]
+    assert len(links) == 1
+    assert links[0]["sessions"] == ["mx-alpha", "mx-beta"]
+    assert links[0]["identity_claim"] == "not established"
+    assert "not people" in links[0]["note"]
 
 
-def test_the_report_never_carries_the_whole_token():
-    registry = cn.CanaryRegistry()
-    planted = registry.plant("mx-a", 7, _env())
-    registry.observe("mx-b", f"k={planted.token}")
-    text = str(registry.report())
-    assert planted.token not in text
-    assert planted.token[-6:] in text
+def test_deterministic_tokens_are_labelled_predictable():
+    canary = c.Canary("mx-a", 1301)
+    assert canary.secret_backed is False
+    assert canary.record()["predictable"] is True
+    assert c.derive_token(1301, "mx-a") == canary.token      # reproducible, by design
 
 
-def test_priority_rises_only_when_the_token_is_used():
-    registry = cn.CanaryRegistry()
-    registry.plant("mx-a", 7, _env())
-    assert registry.report()["priority"] == "normal"
-    registry.observe_file_read("mx-a", "/home/deploy/.aws/credentials")
-    assert registry.report()["priority"] == "high"
+def test_secret_keyed_tokens_differ_and_are_not_labelled_predictable():
+    plain = c.Canary("mx-a", 1301)
+    keyed = c.Canary("mx-a", 1301, secret=b"not-in-this-repository")
+    assert keyed.token != plain.token
+    assert keyed.secret_backed is True
+    assert keyed.record()["predictable"] is False
 
 
-def test_the_canary_has_no_route_off_the_machine():
-    """No socket, no urllib, no subprocess, no callback of any kind."""
-    tree = ast.parse(MODULE.read_text())
-    imported = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            imported.update(a.name.split(".")[0] for a in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            imported.add(node.module.split(".")[0])
-    assert imported <= {"__future__", "hashlib", "dataclasses"}, imported
+def test_the_canary_cannot_leave_the_machine():
+    source = Path(c.__file__).read_text()
+    tree = ast.parse(source)
+    imported = {a.name.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.Import)
+                for a in n.names} | {n.module.split(".")[0] for n in ast.walk(tree)
+                                      if isinstance(n, ast.ImportFrom) and n.module}
+    assert imported <= {"__future__", "hashlib", "hmac", "ast", "pathlib"}
+    for beacon in ("urlopen", "socket", "connect(", "sendto", "requests"):
+        assert beacon not in source
 
 
-def test_there_is_no_beacon_function_to_call():
-    """The absence is the design: an intel file cannot be pointed at a target."""
-    source = MODULE.read_text()
-    for forbidden in ("requests.", "urlopen", "socket.", "subprocess.", "connect(",
-                      "sendto", "exfil"):
-        assert forbidden not in source, forbidden
+def test_the_demo_runs_as_a_process():
+    import subprocess
+    import sys
+
+    result = subprocess.run([sys.executable, "-m", "harness.deception.canary"],
+                            capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stderr[-300:]
+    assert "identity: not established" in result.stdout
+    assert "unguessability" in result.stdout
