@@ -1,5 +1,17 @@
 # Security posture of assay
 
+## Security invariant
+
+No unauthorized change to a protected file causes repository code to execute before the change is
+detected. `tools/hostile_matrix.py` attacks that statement rather than describing it: nine
+mutations, each applied to a full copy of the tree, then the CI gate run in CI order. Detection is
+judged by exit status; ordering is judged by a canary that only writes its marker if a protected
+module is imported, with a control run that requires the marker to appear.
+
+The matrix does not validate its own trust roots. The verifier digest and the anchor are supplied to
+it from outside the copy, exactly as CI supplies them from repository variables. If those values
+are compromised, every mutation passes.
+
 ## What this establishes
 
 `python tools/integrity.py verify` reports by name any reviewed file that was added, removed or
@@ -20,8 +32,8 @@ against a mutable baseline stored in this repository.
 ## The anchor
 
 ```
-    set digest: 877974401e35b9292ab83d21e7be3aae3dfe2aec45c9554192839e9a2ff675df
-    files:      69
+    set digest: d50a1ec00be38f3f8f4dac2cebe07beefe5f6eb43fb40060f0ecc70429f2b0d3
+    files:      71
 ```
 
 `SECURITY.md` sits outside the covered set on purpose, so the anchor is not part of what it attests.
