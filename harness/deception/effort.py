@@ -175,9 +175,8 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
-    sys.path.insert(0, str(PACKAGE))
-    import hellbox as hb
-    import mirror as mx
+    from harness.deception import hellbox as hb
+    from harness.deception import mirror as mx
 
     box = mx.Mirror()
     sessions = []
