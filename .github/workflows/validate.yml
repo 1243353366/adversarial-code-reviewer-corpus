@@ -42,6 +42,9 @@ jobs:
       - name: Tests
         run: pytest -q
 
+      - name: Ownership agreement across one session model
+        run: python -m harness.deception.ownership
+
       - name: Attack the security invariant
         run: python tools/hostile_matrix.py
 
