@@ -15,6 +15,14 @@ jobs:
           python-version: "3.11"
       - name: Install dev dependencies
         run: pip install -r requirements-dev.txt
+      # Runs first: these files are executed by path below, so drift must be caught before
+      # anything in harness/ or tools/ is allowed to run.
+      - name: Verify repository integrity and identity
+        run: python tools/integrity.py all
+
+      - name: Lint the harness
+        run: python -m pyflakes harness tools tests
+
       - name: Validate corpus (schema, provenance, licensing guard)
         run: python tools/validate_corpus.py
       - name: Review our own code with the catalogue's rules

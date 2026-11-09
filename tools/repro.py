@@ -298,8 +298,6 @@ def r_spelling_drift(state: dict) -> list[str]:
 # --- hostile peer defects -------------------------------------------------------
 
 sys.path.insert(0, str(ROOT))  # the harness package lives at the repo root
-from harness.untrusted_peer import protocol as UP  # noqa: E402
-from harness.untrusted_peer.audit import attack as _attack  # noqa: E402
 from harness.untrusted_peer.hardened import HardenedListener as _Hard  # noqa: E402
 from harness.untrusted_peer.naive import NaiveListener as _Naive  # noqa: E402
 from harness.untrusted_peer.peer import ScriptedPeer as _Peer  # noqa: E402
@@ -601,7 +599,7 @@ def _prov(kind: str):
     """Provenance-confusion pairs: naive listener versus guarded listener."""
 
     def check(naive: bool):
-        from harness.provenance import INTERNAL, internal_capability  # noqa: E402
+        from harness.provenance import INTERNAL  # noqa: E402
         from harness.provenance.listener import GuardedListener, NaiveListener  # noqa: E402
 
         if kind == "claimed_origin":
@@ -677,7 +675,6 @@ def _cost(kind: str):
 
     def check(naive: bool) -> list[str]:
         if kind == "no_ratio":
-            naive_reply = 1_000_000 if naive else 0
             if naive:
                 return ["defect reproduced: 10 request bytes bought a 1MB response, no ratio computed"]
             g = _Guard()
@@ -707,7 +704,6 @@ def _cost(kind: str):
                 g.observe("peer", _EXPENSIVE)
             return [] if g.observe("peer", _HONEST).action == "terminate" else ["the denial was not remembered"]
         if kind == "nan_ratio":
-            req = 0
             naive_ratio = float("nan") if naive else None
             if naive:
                 breaches = naive_ratio > 20.0  # False for NaN

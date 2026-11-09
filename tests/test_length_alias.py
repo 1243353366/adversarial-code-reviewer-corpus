@@ -7,19 +7,16 @@ which half is which.
 """
 from __future__ import annotations
 
+from harness.untrusted_peer.protocol import ProtocolError
 import ast
 import struct
-import sys
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "tools"))
 
 from harness.untrusted_peer.alias_chain import GuardedAliasChain, NaiveAliasChain  # noqa: E402
-from harness.untrusted_peer.protocol import MAX_FRAME, ProtocolError  # noqa: E402
 import self_review as SR  # noqa: E402
 
 HUGE = 2_000_000_000

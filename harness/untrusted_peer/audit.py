@@ -6,7 +6,6 @@ listener breaks and the hardened one refuses for the stated reason.
 from __future__ import annotations
 
 import json
-import struct
 
 from .hardened import HardenedListener
 from .naive import NaiveListener

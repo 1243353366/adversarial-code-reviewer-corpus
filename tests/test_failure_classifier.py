@@ -8,12 +8,9 @@ from __future__ import annotations
 
 import ast
 import hashlib
-import json
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "tools"))
 
 import failure_classifier as fc  # noqa: E402
 import failure_intelligence as fi  # noqa: E402

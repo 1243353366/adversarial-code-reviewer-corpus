@@ -1,5 +1,4 @@
 """Self-referential input: the listener has to know which of its own words it is hearing."""
-import pytest
 
 from harness.provenance import INTERNAL, REMOTE, internal_capability
 from harness.provenance.listener import GuardedListener, NaiveListener

@@ -9,13 +9,11 @@ Four rules, each enforced rather than stated:
 4. Every methodological change carries a justification.
 """
 import re
-import sys
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "tools"))
 
 import repro as R  # noqa: E402
 

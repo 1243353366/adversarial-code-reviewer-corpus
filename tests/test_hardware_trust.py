@@ -12,9 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 HW = ROOT / "harness" / "hardware"
-sys.path.insert(0, str(HW))
 
-import trust as t  # noqa: E402
+from harness.hardware import trust as t  # noqa: E402
 
 ATTESTED = [
     t.Component("Dell", "PowerEdge R650", "SN-4471", "sha256:aa11", True, True),

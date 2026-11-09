@@ -9,13 +9,10 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
-import sys
 from pathlib import Path
 
-import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "tools"))
 
 import failure_intelligence as fi  # noqa: E402
 
@@ -132,7 +129,6 @@ def test_recurrence_is_detected_after_an_earlier_resolution():
 # --- evidence integrity ------------------------------------------------------------
 
 def test_every_claimed_reproduction_exists():
-    sys.path.insert(0, str(ROOT / "tools"))
     import repro
 
     known = {getattr(r, "id", getattr(r, "rid", "")) for r in repro.REGISTRY}

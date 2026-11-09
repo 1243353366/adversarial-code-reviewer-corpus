@@ -12,7 +12,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEC = ROOT / "harness" / "deception"
-sys.path.insert(0, str(DEC))
 
 import effort  # noqa: E402
 import hellbox as hb  # noqa: E402

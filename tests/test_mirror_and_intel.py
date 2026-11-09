@@ -13,7 +13,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEC = ROOT / "harness" / "deception"
-sys.path.insert(0, str(DEC))
 
 import aws_intel as ai  # noqa: E402
 import mirror as mx  # noqa: E402
